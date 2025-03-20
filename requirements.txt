@@ -1,0 +1,6 @@
+azure-functions
+requests
+moviepy
+mistralai
+openai
+google-generativeai
