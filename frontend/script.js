@@ -10,7 +10,8 @@ async function generateLecture() {
     document.getElementById('lectureVideo').src = '';
 
     try {
-        const response = await fetch('YOUR_AZURE_FUNCTION_URL', {
+        const response = await fetch('https://ai-video.azurewebsites.net/api/generateLecture
+', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ question })
