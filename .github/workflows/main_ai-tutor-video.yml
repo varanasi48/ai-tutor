@@ -1,4 +1,4 @@
-name: Deploy Python Project to Azure Function App - ai-tutor-video
+name: Deploy Python Project to Azure Function App - ai-video
 
 on:
   push:
