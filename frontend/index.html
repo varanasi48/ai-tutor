@@ -1,4 +1,33 @@
-<!Doctype html>
-<html>
-  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Tutor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>AI Tutor</h1>
+        <input type="text" id="question" placeholder="Enter your question...">
+        <button onclick="generateLecture()">Generate Lecture</button>
+        
+        <div id="output">
+            <h2>Lecture Content</h2>
+            <p id="lectureText">Waiting for response...</p>
+        </div>
+        
+        <div id="media">
+            <h2>Reference Images/Videos</h2>
+            <div id="mediaContent"></div>
+        </div>
+        
+        <div id="videoOutput">
+            <h2>Generated Video</h2>
+            <video id="lectureVideo" controls></video>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
 </html>
