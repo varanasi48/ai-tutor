@@ -1,0 +1,64 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    text-align: center;
+}
+
+.container {
+    max-width: 800px;
+    margin: 20px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #333;
+}
+
+input {
+    width: 70%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    padding: 10px 15px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+#output, #media, #videoOutput {
+    margin-top: 20px;
+    text-align: left;
+}
+
+#lectureText {
+    background: #e9ecef;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#mediaContent img, #mediaContent video {
+    width: 100%;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+
+#lectureVideo {
+    width: 100%;
+    margin-top: 10px;
+    border-radius: 5px;
+}
