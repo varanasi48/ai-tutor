@@ -25,65 +25,67 @@
 
     <h2>AI Tutor</h2>
     <input type="text" id="question" placeholder="Enter your question here">
-    <button onclick="askAI()">Ask</button>
+    <button onclick="fetchLecture()">Ask</button>
 
     <p id="response">Response will appear here...</p>
 
     <script>
         const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0"; // Replace with your actual Logic App URL
 
-        async function askAI() {
-            const question = document.getElementById("question").value;
-            if (!question) {
-                alert("Please enter a question.");
-                return;
-            }
+       async function fetchLecture() {
+    const questionInput = document.getElementById("question").value;
+    if (!questionInput) {
+        alert("Please enter a question.");
+        return;
+    }
 
-            document.getElementById("response").innerText = "Processing...";
+    try {
+        const response = await fetch("LOGIC_APP_URL", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ question: questionInput })
+        });
 
-            try {
-                // Step 1: Send the question to the Logic App
-                let initResponse = await fetch(LOGIC_APP_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ question })
-                });
+        const data = await response.json();
+        console.log("Initial Response:", data);  // Debugging
 
-                let initData = await initResponse.json();
-                console.log("Initial Response:", initData);
-
-                if (!initData || !initData.id) {
-                    throw new Error("Invalid initial response from Logic App.");
-                }
-
-                // Step 2: Poll for the response
-                let runId = initData.id;
-                let result;
-                for (let i = 0; i < 10; i++) {  // Poll up to 10 times
-                    await new Promise(res => setTimeout(res, 3000)); // Wait for 3 seconds
-
-                    let statusResponse = await fetch(`${LOGIC_APP_URL}/runs/${runId}`);
-                    let statusData = await statusResponse.json();
-                    console.log("Polling Response:", statusData);
-
-                    if (statusData.properties.status === "Succeeded") {
-                        result = statusData.properties.outputs.body;
-                        break;
-                    }
-                }
-
-                if (!result || !result.answer) {
-                    throw new Error("No valid response received from AI.");
-                }
-
-                // Display the answer
-                document.getElementById("response").innerText = `Answer: ${result.answer}`;
-
-            } catch (error) {
-                console.error("Error:", error);
-                document.getElementById("response").innerText = "❌ Error connecting to AI Tutor.";
-            }
+        if (data.id) {
+            console.log("Request ID:", data.id);
+            checkStatus(data.id);  // Start polling
+        } else {
+            throw new Error("Unexpected response format");
         }
+    } catch (error) {
+        console.error("Error fetching lecture:", error);
+    }
+}
+
+async function checkStatus(requestId) {
+    try {
+        const response = await fetch(`LOGIC_APP_URL/status/${requestId}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        const data = await response.json();
+        console.log("Polling Response:", data);  // Debugging
+
+        if (data.status === "completed") {
+            document.getElementById("response").innerText = data.answer; // Show response
+        } else if (data.status === "processing") {
+            setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 sec
+        } else {
+            throw new Error("Unexpected status: " + data.status);
+        }
+    } catch (error) {
+        console.error("Polling error:", error);
+    }
+}
+
     </script>
 
 </body>
