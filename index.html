@@ -63,28 +63,24 @@
             }
         });
 
-        async function checkStatus(requestId) {
-            try {
-                const response = await fetch(`${LOGIC_APP_URL}/status/${requestId}`, {
-                    method: "GET",
-                    headers: { "Content-Type": "application/json" }
-                });
+       async function checkStatus(url) {
+    try {
+        const response = await fetch(url);
+        if (response.status === 200) {
+            const result = await response.json();
+            console.log("Full Response:", result); // Debugging: Print full response
 
-                const data = await response.json();
-                console.log("Polling Response:", data);  // Debugging
-
-                if (data.status === "completed" && data.answer) {
-                    document.getElementById("responseBox").innerHTML = `<strong>✅ AI Response:</strong> ${data.answer}`;
-                } else if (data.status === "processing") {
-                    setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 sec
-                } else {
-                    throw new Error("Invalid response format");
-                }
-            } catch (error) {
-                console.error("Polling error:", error);
-                document.getElementById("responseBox").innerHTML = "❌ Timed out waiting for response.";
-            }
+            // Safely access the response message
+            const message = result?.body?.message || "AI response received.";
+            document.getElementById("response").innerText = message;
+        } else {
+            setTimeout(() => checkStatus(url), 3000); // Retry after 3 seconds
         }
+    } catch (error) {
+        console.error("Polling error:", error);
+        setTimeout(() => checkStatus(url), 3000);
+    }
+}
     </script>
 
 </body>
