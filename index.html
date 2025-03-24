@@ -45,7 +45,7 @@
                     }
                 } else if (response.status === 200) {
                     const result = await response.json();
-                    document.getElementById("response").innerText = result.body.message || "No response text";
+                    document.getElementById("response").innerText = result.answer || "No answer available";
                 } else {
                     document.getElementById("response").innerText = "❌ Error connecting to AI Tutor.";
                 }
@@ -62,9 +62,9 @@
                     const result = await response.json();
                     console.log("Full Response:", result); // Debugging: Print full response
 
-                    // Safely access the response message and display it in the UI
-                    const message = result?.body?.answer || "AI response received.";
-                    document.getElementById("response").innerText = message; // Update the UI with response
+                    // Now accessing answer directly from the response
+                    const answer = result?.answer || "AI response received."; // Using result.answer directly
+                    document.getElementById("response").innerText = answer; // Update the UI with the answer
                 } else {
                     setTimeout(() => checkStatus(url), 3000); // Retry after 3 seconds
                 }
