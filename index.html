@@ -1,89 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
-        }
-        #responseBox {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ccc;
-            min-height: 50px;
-            display: inline-block;
-            width: 60%;
-        }
-    </style>
-</head>
-<body>
-
-    <h2>Ask AI Tutor</h2>
-    <input type="text" id="questionInput" placeholder="Enter your question" size="50">
-    <button id="submitButton">Ask</button>
-    <div id="responseBox">Response will appear here...</div>
-
-    <script>
-        const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";  // Replace with actual Logic App URL
-
-        document.getElementById("submitButton").addEventListener("click", async function () {
-            const question = document.getElementById("questionInput").value;
-            const responseBox = document.getElementById("responseBox");
-
-            if (!question.trim()) {
-                alert("Please enter a question.");
-                return;
-            }
-
-            responseBox.innerHTML = "⏳ AI is thinking...";
-            
-            try {
-                // Send request to Logic App
-                const response = await fetch(LOGIC_APP_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ question: question })
-                });
-
-                const data = await response.json();
-                console.log("Initial Response:", data);  // Debugging
-
-                if (data.requestId) {
-                    checkStatus(data.requestId);
-                } else {
-                    throw new Error("Unexpected response format");
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                responseBox.innerHTML = "❌ Error connecting to AI Tutor.";
-            }
+async function fetchLecture(question) {
+    const url = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0"; // Replace with your actual Logic App URL
+    
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ question })
         });
 
-       async function checkStatus(url) {
-    try {
-        const response = await fetch(url);
-        if (response.status === 200) {
-            const result = await response.json();
-            console.log("Full Response:", result); // Debugging: Print full response
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
 
-            // Safely access the response message
-            const message = result?.body?.message || "AI response received.";
-            document.getElementById("response").innerText = message;
+        const data = await response.json();
+        console.log("Full Response:", data);
+
+        if (data && data.body && data.body.answer) {
+            document.getElementById("output").innerText = data.body.answer;
         } else {
-            setTimeout(() => checkStatus(url), 3000); // Retry after 3 seconds
+            throw new Error("Unexpected response format");
         }
     } catch (error) {
-        console.error("Polling error:", error);
-        setTimeout(() => checkStatus(url), 3000);
+        console.error("Error:", error);
+        document.getElementById("output").innerText = "Error fetching response";
     }
 }
 
-
-    </script>
-
-</body>
-</html>
+// Example usage
+const submitBtn = document.getElementById("submit");
+submitBtn.addEventListener("click", () => {
+    const question = document.getElementById("question").value;
+    fetchLecture(question);
+});
