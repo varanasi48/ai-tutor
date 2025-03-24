@@ -3,45 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Azure Logic App Trigger Test</title>
+    <title>AI Tutor</title>
 </head>
 <body>
-    <h1>Azure Logic App Trigger Test</h1>
-
-    <button id="triggerButton">Trigger Logic App</button>
-    <p id="response"></p>
+    <h2>AI Tutor</h2>
+    <input type="text" id="questionInput" placeholder="Enter your question">
+    <button onclick="fetchLecture()">Get Lecture</button>
+    <p id="responseOutput"></p>
 
     <script>
-        const triggerButton = document.getElementById('triggerButton');
-        const responseDisplay = document.getElementById('response');
+        const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
 
-        // Your Logic App trigger URL
-        const logicAppUrl = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
+        async function fetchLecture() {
+            const question = document.getElementById("questionInput").value;
+            if (!question) {
+                alert("Please enter a question.");
+                return;
+            }
 
-        triggerButton.addEventListener('click', async () => {
             try {
-                const response = await fetch(logicAppUrl, {
-                    method: 'POST',
+                const response = await fetch(LOGIC_APP_URL, {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
+                        "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({
-                        "message": "Hello from the web UI"
-                    })
+                    body: JSON.stringify({ question })
                 });
 
-                const responseData = await response.json();
-                responseDisplay.innerText = `Response: ${JSON.stringify(responseData, null, 2)}`;
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status} ${response.statusText}`);
+                }
 
-                if (response.status === 202) {
-                    responseDisplay.innerText += '\nTrigger accepted successfully!';
+                const result = await response.json();
+                console.log("Initial Response:", result);
+
+                if (result.id) {
+                    checkStatus(result.id);
                 } else {
-                    responseDisplay.innerText += `\nError: ${response.status} - ${responseData.message || 'Unknown error'}`;
+                    throw new Error("No request ID returned.");
                 }
             } catch (error) {
-                responseDisplay.innerText = `Error: ${error.message}`;
+                console.error("Error fetching lecture:", error);
+                document.getElementById("responseOutput").innerText = "Error fetching lecture.";
             }
-        });
+        }
+
+        async function checkStatus(url) {
+            try {
+                const response = await fetch(url);
+                if (response.status === 200) {
+                    const result = await response.json();
+                    console.log("Full Response:", result); // Debugging: Print full response
+
+                    // Safely access the response message
+                    const message = result?.body?.message || "AI response received.";
+                    document.getElementById("responseOutput").innerText = message;
+                } else {
+                    setTimeout(() => checkStatus(url), 3000); // Retry after 3 seconds
+                }
+            } catch (error) {
+                console.error("Polling error:", error);
+                setTimeout(() => checkStatus(url), 3000);
+            }
+        }
     </script>
 </body>
 </html>
