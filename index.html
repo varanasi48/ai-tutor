@@ -63,28 +63,30 @@
             }
         });
 
-        async function checkStatus(requestId) {
-            try {
-                const response = await fetch(`${LOGIC_APP_URL}/status/${requestId}`, {
-                    method: "GET",
-                    headers: { "Content-Type": "application/json" }
-                });
-
-                const data = await response.json();
-                console.log("Polling Response:", data);  // Debugging
-
-                if (data.status === "completed" && data.answer) {
-                    document.getElementById("responseBox").innerHTML = `<strong>✅ AI Response:</strong> ${data.answer}`;
-                } else if (data.status === "processing") {
-                    setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 sec
-                } else {
-                    throw new Error("Invalid response format");
-                }
-            } catch (error) {
-                console.error("Polling error:", error);
-                document.getElementById("responseBox").innerHTML = "❌ Timed out waiting for response.";
+       async function checkStatus(requestId) {
+    try {
+        const response = await fetch(`LOGIC_APP_URL/status/${requestId}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
             }
+        });
+
+        const data = await response.json();
+        console.log("Polling Response:", data);  // Debugging log
+
+        if (data.status === "completed") {
+            return data.answer;  // ✅ Now fetching `answer` instead of `message`
+        } else if (data.status === "processing") {
+            setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 seconds
+        } else {
+            throw new Error("Unexpected status: " + data.status);
         }
+    } catch (error) {
+        console.error("Polling error:", error);
+    }
+}
+
     </script>
 
 </body>
