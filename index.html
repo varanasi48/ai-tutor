@@ -5,76 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Tutor</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            padding: 20px;
-        }
-
-        input, button {
-            padding: 10px;
-            margin: 10px;
-            font-size: 16px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        #responseContainer {
-            margin-top: 20px;
-            background-color: #ffffff;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            display: inline-block;
-            width: 80%;
-            max-width: 800px;
-        }
-
-        .response-header {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .response-text {
-            font-size: 18px;
-            line-height: 1.6;
-            color: #555;
-        }
-
-        .highlight {
-            background-color: #f7f7f7;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            color: #333;
-        }
-
-        .example {
-            background-color: #e6f7ff;
-            padding: 10px;
-            border-left: 5px solid #5bc0de;
-            margin-top: 15px;
-            color: #2c3e50;
-        }
-
-        .error {
-            color: #e74c3c;
-            font-weight: bold;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        input, button { padding: 10px; margin: 10px; }
+        #response { margin-top: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
     <h1>AI Tutor</h1>
     <input type="text" id="question" placeholder="Enter your question">
     <button onclick="fetchLecture()">Ask AI</button>
-
-    <div id="responseContainer" style="display:none;">
-        <p class="response-header">Lecture Response</p>
-        <p id="response" class="response-text"></p>
-    </div>
+    <p id="response">Waiting for response...</p>
 
     <script>
         async function fetchLecture() {
@@ -84,10 +24,9 @@
                 return;
             }
 
-            document.getElementById("responseContainer").style.display = "none"; // Hide previous response
-            document.getElementById("response").innerText = "⏳ Processing...";
+            const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
 
-            const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0"; // Replace with your Logic App URL
+            document.getElementById("response").innerText = "⏳ Processing...";
 
             try {
                 const response = await fetch(LOGIC_APP_URL, {
@@ -100,22 +39,19 @@
                     document.getElementById("response").innerText = "⏳ AI is thinking...";
                     const location = response.headers.get("Location"); // Get response URL
                     if (location) {
-                        checkStatus(location);
+                        checkStatus(location); // Pass the location URL to check status
                     } else {
                         document.getElementById("response").innerText = "❌ No result URL provided.";
                     }
                 } else if (response.status === 200) {
                     const result = await response.json();
-                    document.getElementById("response").innerText = result.body.answer || "No response text";
-                    document.getElementById("responseContainer").style.display = "block"; // Show the response
+                    document.getElementById("response").innerText = result.answer || "No answer available";
                 } else {
                     document.getElementById("response").innerText = "❌ Error connecting to AI Tutor.";
-                    document.getElementById("responseContainer").style.display = "block"; // Show the response
                 }
             } catch (error) {
                 console.error("Fetch error:", error);
                 document.getElementById("response").innerText = "❌ Request failed.";
-                document.getElementById("responseContainer").style.display = "block"; // Show the response
             }
         }
 
@@ -124,9 +60,11 @@
                 const response = await fetch(url);
                 if (response.status === 200) {
                     const result = await response.json();
-                    console.log("Full Response:", result);
-                    document.getElementById("response").innerText = result.body.answer || "AI response received.";
-                    document.getElementById("responseContainer").style.display = "block"; // Show the response
+                    console.log("Full Response:", result); // Debugging: Print full response
+
+                    // Now accessing answer directly from the response
+                    const answer = result?.answer || "AI response received."; // Using result.answer directly
+                    document.getElementById("response").innerText = answer; // Update the UI with the answer
                 } else {
                     setTimeout(() => checkStatus(url), 3000); // Retry after 3 seconds
                 }
