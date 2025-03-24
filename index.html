@@ -1,35 +1,72 @@
-async function checkStatus(requestId) {
-    try {
-        const statusUrl = `https://prod-30.southindia.logic.azure.com/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/runs/${requestId}?api-version=2016-10-01&sv=1.0&sig=YOUR_SIGNATURE`;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Logic App Test</title>
+</head>
+<body>
+    <h2>Azure Logic App Test</h2>
+    <button onclick="fetchLecture()">Get Lecture</button>
+    <p id="responseText">Waiting for response...</p>
 
-        console.log("Checking status at:", statusUrl);
+    <script>
+        async function fetchLecture() {
+            const logicAppUrl = "https://prod-30.southindia.logic.azure.com/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=YOUR_SIGNATURE";
 
-        const response = await fetch(statusUrl, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
+            try {
+                const response = await fetch(logicAppUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question: "What is AI?" })
+                });
+
+                const data = await response.json();
+                console.log("Initial Response:", data);
+
+                if (data.id) {
+                    document.getElementById("responseText").innerText = "Processing...";
+                    checkStatus(data.id);
+                } else {
+                    document.getElementById("responseText").innerText = "Error: No request ID received.";
+                }
+            } catch (error) {
+                console.error("Error fetching lecture:", error);
+                document.getElementById("responseText").innerText = "Failed to send request.";
             }
-        });
-
-        if (response.status === 401) {
-            console.error("❌ 401 Unauthorized! Check the signature (sig) in the URL.");
-            return;
         }
 
-        const data = await response.json();
-        console.log("Polling Response:", data);
+        async function checkStatus(requestId) {
+            const statusUrl = `https://prod-30.southindia.logic.azure.com/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/runs/${requestId}?api-version=2016-10-01&sv=1.0&sig=YOUR_SIGNATURE`;
 
-        if (data.properties && data.properties.status === "Succeeded") {
-            console.log("✅ Final Response Received:", data);
-            const answer = data.properties.outputs.answer || "No answer received.";
-            document.getElementById("responseText").innerText = answer;
-        } else if (data.properties && data.properties.status === "Running") {
-            setTimeout(() => checkStatus(requestId), 2000);  // Poll every 2s
-        } else {
-            document.getElementById("responseText").innerText = "Error: Unexpected response.";
+            try {
+                console.log("Checking status at:", statusUrl);
+                
+                const response = await fetch(statusUrl, { method: "GET", headers: { "Content-Type": "application/json" } });
+
+                if (response.status === 401) {
+                    console.error("❌ 401 Unauthorized! Check the signature (sig) in the URL.");
+                    document.getElementById("responseText").innerText = "401 Unauthorized: Check API Key.";
+                    return;
+                }
+
+                const data = await response.json();
+                console.log("Polling Response:", data);
+
+                if (data.properties?.status === "Succeeded") {
+                    console.log("✅ Final Response:", data);
+                    const answer = data.properties.outputs.answer || "No answer received.";
+                    document.getElementById("responseText").innerText = answer;
+                } else if (data.properties?.status === "Running") {
+                    setTimeout(() => checkStatus(requestId), 2000);  // Poll every 2s
+                } else {
+                    document.getElementById("responseText").innerText = "Unexpected response.";
+                }
+            } catch (error) {
+                console.error("Polling error:", error);
+                document.getElementById("responseText").innerText = "Error polling response.";
+            }
         }
-    } catch (error) {
-        console.error("❌ Polling error:", error);
-        document.getElementById("responseText").innerText = "Error polling response.";
-    }
-}
+    </script>
+</body>
+</html>
