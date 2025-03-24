@@ -4,96 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Tutor</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
-        input, button {
-            margin: 10px;
-            padding: 10px;
-            font-size: 16px;
-        }
-        #response {
-            margin-top: 20px;
-            font-weight: bold;
-        }
-    </style>
 </head>
 <body>
-
     <h2>AI Tutor</h2>
-    <input type="text" id="question" placeholder="Enter your question here">
-    <button onclick="fetchLecture()">Ask</button>
-
-    <p id="response">Response will appear here...</p>
+    <button onclick="fetchLecture()">Generate Lecture</button>
+    <p id="responseOutput">Waiting for response...</p>
 
     <script>
-        const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0"; // Replace with your actual Logic App URL
+        async function fetchLecture() {
+            const logicAppUrl = "https://prod-30.southindia.logic.azure.com/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
 
-   async function fetchLecture() {
-    const questionInput = document.getElementById("question").value;
-    if (!questionInput) {
-        alert("Please enter a question.");
-        return;
-    }
+            try {
+                const response = await fetch(logicAppUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ question: "What is AI?" })  // Replace with dynamic input
+                });
 
-    try {
-        const response = await fetch(LOGIC_APP_URL, {  // ✅ FIXED
-            method: "POST",  
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ question: questionInput })
-        });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
 
-        // Ensure we are receiving valid JSON
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
+                const data = await response.json();
+                console.log("Response from Logic App:", data);
 
-        const data = await response.json();
-        console.log("Initial Response:", data);  // Debugging
-
-        if (data.id) {
-            console.log("Request ID:", data.id);
-            checkStatus(data.id);  // Start polling
-        } else {
-            throw new Error("Unexpected response format");
-        }
-    } catch (error) {
-        console.error("Error fetching lecture:", error);
-    }
-}
-
-        async function checkStatus(requestId) {
-    try {
-        const response = await fetch(`${LOGIC_APP_URL}/runs/${requestId}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
+                if (data && data.answer) {
+                    document.getElementById("responseOutput").innerText = data.answer;
+                } else {
+                    document.getElementById("responseOutput").innerText = "No answer received.";
+                }
+            } catch (error) {
+                console.error("Error fetching lecture:", error);
+                document.getElementById("responseOutput").innerText = "Error fetching lecture.";
             }
-        });
-
-        const data = await response.json();
-        console.log("Polling Response:", data);  // Debugging
-
-        if (data.status === "Completed") {
-            console.log("Final Response:", data);
-            document.getElementById("response").innerText = data.output.answer;  // Display the answer
-        } else if (data.status === "Running") {
-            setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 seconds
-        } else {
-            throw new Error("Unexpected status: " + data.status);
         }
-    } catch (error) {
-        console.error("Polling error:", error);
-    }
-}
-
-
     </script>
-
 </body>
 </html>
