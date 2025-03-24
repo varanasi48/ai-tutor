@@ -4,78 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Tutor</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        input, button { padding: 10px; margin: 10px; }
+        #response { margin-top: 20px; font-weight: bold; }
+    </style>
 </head>
 <body>
-    <h2>AI Tutor</h2>
-    <input type="text" id="questionInput" placeholder="Enter your question">
-    <button onclick="fetchLecture()">Get Lecture</button>
-    <p id="responseOutput"></p> <!-- UI element to display the response -->
+    <h1>AI Tutor</h1>
+    <input type="text" id="question" placeholder="Enter your question">
+    <button onclick="fetchLecture()">Ask AI</button>
+    <p id="response">Waiting for response...</p>
 
     <script>
-        const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
-
         async function fetchLecture() {
-            const question = document.getElementById("questionInput").value;
+            const question = document.getElementById("question").value;
             if (!question) {
-                alert("Please enter a question.");
+                alert("Please enter a question");
                 return;
             }
+
+            const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0"; // Replace with your Logic App URL
+
+            document.getElementById("response").innerText = "⏳ Processing...";
 
             try {
                 const response = await fetch(LOGIC_APP_URL, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ question })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Error: ${response.status} ${response.statusText}`);
-                }
-
-                const result = await response.json();
-                console.log("Initial Response:", result);
-
-                if (result.id) {
-                    checkStatus(result.id);
-                } else {
-                    throw new Error("No request ID returned.");
-                }
-            } catch (error) {
-                console.error("Error fetching lecture:", error);
-                document.getElementById("responseOutput").innerText = "Error fetching lecture.";
-            }
-        }
-
-        async function checkStatus(requestId) {
-            try {
-                const statusUrl = `${LOGIC_APP_URL}/runs/${requestId}`;
-                console.log("Polling URL:", statusUrl);
-
-                const response = await fetch(statusUrl, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
+                if (response.status === 202) {
+                    document.getElementById("response").innerText = "⏳ AI is thinking...";
+                    const location = response.headers.get("Location"); // Get response URL
+                    if (location) {
+                        checkStatus(location);
+                    } else {
+                        document.getElementById("response").innerText = "❌ No result URL provided.";
                     }
-                });
-
-                const data = await response.json();
-                console.log("Polling Response:", data);
-
-                if (data.properties?.status === "Succeeded" && data.properties?.outputs?.answer) {
-                    const message = data.properties.outputs.answer;
-                    document.getElementById("responseOutput").innerText = message; // Display the message in the UI
-                } else if (data.properties?.status === "Running") {
-                    setTimeout(() => checkStatus(requestId), 2000); // Retry after 2 seconds if still running
+                } else if (response.status === 200) {
+                    const result = await response.json();
+                    document.getElementById("response").innerText = result.body.message || "No response text";
                 } else {
-                    throw new Error("Unexpected status: " + data.properties?.status);
+                    document.getElementById("response").innerText = "❌ Error connecting to AI Tutor.";
                 }
             } catch (error) {
-                console.error("Polling error:", error);
-                document.getElementById("responseOutput").innerText = "Error retrieving lecture.";
+                console.error("Fetch error:", error);
+                document.getElementById("response").innerText = "❌ Request failed.";
             }
         }
+
+       async function checkStatus(url) {
+    try {
+        const response = await fetch(url);
+        if (response.status === 200) {
+            const result = await response.json();
+            console.log("Full Response:", result); // Debugging: Print full response
+
+            // Safely access the response message
+            const message = result?.body?.message || "AI response received.";
+            document.getElementById("response").innerText = message;
+        } else {
+            setTimeout(() => checkStatus(url), 3000); // Retry after 3 seconds
+        }
+    } catch (error) {
+        console.error("Polling error:", error);
+        setTimeout(() => checkStatus(url), 3000);
+    }
+}
+
     </script>
 </body>
 </html>
