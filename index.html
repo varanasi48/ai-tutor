@@ -63,28 +63,32 @@
             }
         });
 
-        async function checkStatus(requestId) {
-            try {
-                const response = await fetch(`${LOGIC_APP_URL}/status/${requestId}`, {
-                    method: "GET",
-                    headers: { "Content-Type": "application/json" }
-                });
+      async function checkStatus(runId) {
+    try {
+        const statusUrl = `${LOGIC_APP_URL}/runs/${runId}`;
+        const response = await fetch(statusUrl, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+        });
 
-                const data = await response.json();
-                console.log("Polling Response:", data);  // Debugging
+        const data = await response.json();
+        console.log("Polling Response:", data);  // Debugging
 
-                if (data.status === "completed" && data.answer) {
-                    document.getElementById("responseBox").innerHTML = `<strong>✅ AI Response:</strong> ${data.answer}`;
-                } else if (data.status === "processing") {
-                    setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 sec
-                } else {
-                    throw new Error("Invalid response format");
-                }
-            } catch (error) {
-                console.error("Polling error:", error);
-                document.getElementById("responseBox").innerHTML = "❌ Timed out waiting for response.";
-            }
+        if (data.properties?.status === "Succeeded") {
+            console.log("Extracted Answer:", data.properties.outputs.body.answer); // Ensure correct extraction
+
+            document.getElementById("responseBox").innerHTML = `<strong>✅ AI Response:</strong> ${data.properties.outputs.body.answer}`;
+        } else if (data.properties?.status === "Running") {
+            setTimeout(() => checkStatus(runId), 2000);
+        } else {
+            throw new Error("Unexpected response format or failed status");
         }
+    } catch (error) {
+        console.error("Polling error:", error);
+        document.getElementById("responseBox").innerHTML = "❌ Error retrieving AI response.";
+    }
+}
+
     </script>
 
 </body>
