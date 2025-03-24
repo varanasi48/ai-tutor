@@ -3,47 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logic App Test</title>
+    <title>AI Tutor</title>
 </head>
 <body>
-
     <h2>Ask AI Tutor</h2>
     <input type="text" id="questionInput" placeholder="Enter your question">
     <button onclick="fetchLecture()">Get Answer</button>
-
-    <h3>Response:</h3>
-    <pre id="responseOutput">Waiting for response...</pre>
+    <p id="responseText"></p>
 
     <script>
+        const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";  // Replace with actual Logic App URL
+
         async function fetchLecture() {
             const question = document.getElementById("questionInput").value;
-            const logicAppUrl = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0"; // Replace with your Logic App URL
-
-            document.getElementById("responseOutput").innerText = "Fetching...";
+            document.getElementById("responseText").innerText = "Fetching...";
 
             try {
-                const response = await fetch(logicAppUrl, {
+                const response = await fetch(LOGIC_APP_URL, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ question: question })
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ question })  // Send the question as JSON
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP Error: ${response.status}`);
+                const data = await response.json();
+                console.log("Initial Response:", data);
+
+                if (data.id) {
+                    checkStatus(data.id);  // Start polling if request ID is received
+                } else {
+                    document.getElementById("responseText").innerText = "Error: No request ID received.";
                 }
+            } catch (error) {
+                console.error("Error fetching lecture:", error);
+                document.getElementById("responseText").innerText = "Error occurred.";
+            }
+        }
+
+        async function checkStatus(requestId) {
+            try {
+                const response = await fetch(`${LOGIC_APP_URL}/runs/${requestId}?api-version=2016-10-01`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
 
                 const data = await response.json();
-                console.log("Full Response:", data);  // Debugging step
+                console.log("Polling Response:", data);
 
-                // Ensure correct field is accessed
-                document.getElementById("responseOutput").innerText = data.answer || "No answer received.";
-                
+                if (data.properties.status === "Succeeded") {
+                    console.log("Final Response Received:", data);
+                    const answer = data.properties.outputs.answer || "No answer received.";
+                    document.getElementById("responseText").innerText = answer;
+                } else if (data.properties.status === "Running") {
+                    setTimeout(() => checkStatus(requestId), 2000);  // Poll every 2s
+                } else {
+                    document.getElementById("responseText").innerText = "Error: Unexpected response.";
+                }
             } catch (error) {
-                console.error("Fetch error:", error);
-                document.getElementById("responseOutput").innerText = "Error fetching response.";
+                console.error("Polling error:", error);
+                document.getElementById("responseText").innerText = "Error polling response.";
             }
         }
     </script>
-
 </body>
 </html>
