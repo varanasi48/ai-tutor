@@ -67,6 +67,32 @@
     }
 }
 
+        async function checkStatus(requestId) {
+    try {
+        const response = await fetch(`${LOGIC_APP_URL}/runs/${requestId}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        const data = await response.json();
+        console.log("Polling Response:", data);  // Debugging
+
+        if (data.status === "Completed") {
+            console.log("Final Response:", data);
+            document.getElementById("response").innerText = data.output.answer;  // Display the answer
+        } else if (data.status === "Running") {
+            setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 seconds
+        } else {
+            throw new Error("Unexpected status: " + data.status);
+        }
+    } catch (error) {
+        console.error("Polling error:", error);
+    }
+}
+
+
     </script>
 
 </body>
