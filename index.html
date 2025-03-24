@@ -28,7 +28,7 @@
     <div id="responseBox">Response will appear here...</div>
 
     <script>
-        const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";  // Replace with actual Logic App URL
+        const LOGIC_APP_URL = "YOUR_LOGIC_APP_URL";  // Replace with actual Logic App URL
 
         document.getElementById("submitButton").addEventListener("click", async function () {
             const question = document.getElementById("questionInput").value;
@@ -63,30 +63,28 @@
             }
         });
 
-       async function checkStatus(requestId) {
-    try {
-        const response = await fetch(`LOGIC_APP_URL/status/${requestId}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
+        async function checkStatus(requestId) {
+            try {
+                const response = await fetch(`${LOGIC_APP_URL}/status/${requestId}`, {
+                    method: "GET",
+                    headers: { "Content-Type": "application/json" }
+                });
+
+                const data = await response.json();
+                console.log("Polling Response:", data);  // Debugging
+
+                if (data.status === "completed" && data.answer) {
+                    document.getElementById("responseBox").innerHTML = `<strong>✅ AI Response:</strong> ${data.answer}`;
+                } else if (data.status === "processing") {
+                    setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 sec
+                } else {
+                    throw new Error("Invalid response format");
+                }
+            } catch (error) {
+                console.error("Polling error:", error);
+                document.getElementById("responseBox").innerHTML = "❌ Timed out waiting for response.";
             }
-        });
-
-        const data = await response.json();
-        console.log("Polling Response:", data);  // Debugging log
-
-        if (data.status === "completed") {
-            return data.answer;  // ✅ Now fetching `answer` instead of `message`
-        } else if (data.status === "processing") {
-            setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 seconds
-        } else {
-            throw new Error("Unexpected status: " + data.status);
         }
-    } catch (error) {
-        console.error("Polling error:", error);
-    }
-}
-
     </script>
 
 </body>
