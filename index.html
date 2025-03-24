@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Azure Logic App Test</title>
+    <title>Azure Logic App Trigger Test</title>
 </head>
 <body>
     <h1>Azure Logic App Trigger Test</h1>
 
     <button id="triggerButton">Trigger Logic App</button>
     <p id="response"></p>
-    <p id="status"></p>
 
     <script>
         const triggerButton = document.getElementById('triggerButton');
         const responseDisplay = document.getElementById('response');
-        const statusDisplay = document.getElementById('status');
 
+        // Your Logic App trigger URL
         const logicAppUrl = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
 
         triggerButton.addEventListener('click', async () => {
@@ -35,39 +34,14 @@
                 responseDisplay.innerText = `Response: ${JSON.stringify(responseData, null, 2)}`;
 
                 if (response.status === 202) {
-                    const runId = responseData.id; // Get the runId from response
-                    checkStatus(runId); // Start polling for the status
+                    responseDisplay.innerText += '\nTrigger accepted successfully!';
                 } else {
-                    statusDisplay.innerText = `Error: ${response.status} - ${responseData.message || 'Unknown error'}`;
+                    responseDisplay.innerText += `\nError: ${response.status} - ${responseData.message || 'Unknown error'}`;
                 }
             } catch (error) {
                 responseDisplay.innerText = `Error: ${error.message}`;
             }
         });
-
-        async function checkStatus(runId) {
-            const statusUrl = `https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/runs/${runId}?api-version=2016-10-01&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0`;
-
-            try {
-                const statusResponse = await fetch(statusUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                const statusData = await statusResponse.json();
-                statusDisplay.innerText = `Status: ${statusData.properties.status}`;
-
-                if (statusData.properties.status === "Running" || statusData.properties.status === "Waiting") {
-                    setTimeout(() => checkStatus(runId), 5000); // Poll every 5 seconds
-                } else {
-                    statusDisplay.innerText = `Final Status: ${statusData.properties.status}`;
-                }
-            } catch (error) {
-                statusDisplay.innerText = `Error checking status: ${error.message}`;
-            }
-        }
     </script>
 </body>
 </html>
