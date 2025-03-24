@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor</title>
+    <title>AI Tutor Debug</title>
 </head>
 <body>
     <h2>AI Tutor</h2>
@@ -28,7 +28,7 @@
                 }
 
                 const data = await response.json();
-                console.log("Initial Response:", data);
+                console.log("🔍 Initial Response from Logic App:", data); // Debugging
 
                 if (data.id) {
                     checkStatus(data.id);
@@ -36,7 +36,7 @@
                     throw new Error("Invalid response format.");
                 }
             } catch (error) {
-                console.error("Error fetching lecture:", error);
+                console.error("❌ Error fetching lecture:", error);
                 document.getElementById("responseOutput").innerText = "Error fetching lecture.";
             }
         }
@@ -52,21 +52,27 @@
                 });
 
                 const data = await response.json();
-                console.log("Polling Response:", data);
+                console.log("🔍 Full Polling Response:", data); // Print full response for debugging
 
                 if (data.properties && data.properties.status === "Succeeded") {
+                    console.log("✅ Final Response:", data);
+
+                    // Print what fields exist
+                    console.log("🔍 Response Keys:", Object.keys(data.properties.response || {}));
+
                     if (data.properties.response && data.properties.response.answer) {
                         document.getElementById("responseOutput").innerText = data.properties.response.answer;
                     } else {
-                        document.getElementById("responseOutput").innerText = "Answer not found in response.";
+                        document.getElementById("responseOutput").innerText = "⚠ Answer not found in response.";
                     }
                 } else if (data.properties.status === "Running") {
-                    setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 seconds
+                    console.log("⏳ Still Processing, Retrying...");
+                    setTimeout(() => checkStatus(requestId), 2000);
                 } else {
                     throw new Error("Unexpected status: " + data.properties.status);
                 }
             } catch (error) {
-                console.error("Polling error:", error);
+                console.error("❌ Polling error:", error);
             }
         }
     </script>
