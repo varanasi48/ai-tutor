@@ -63,29 +63,25 @@
             }
         });
 
-       async function checkStatus(requestId) {
+       async function checkStatus(url) {
     try {
-        const response = await fetch(`LOGIC_APP_URL/status/${requestId}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
+        const response = await fetch(url);
+        if (response.status === 200) {
+            const result = await response.json();
+            console.log("Full Response:", result); // Debugging: Print full response
 
-        const data = await response.json();
-        console.log("Polling Response:", data);  // Log the full response for debugging
-
-        if (data.status === "completed") {
-            return data.message; // Assuming response contains 'message'
-        } else if (data.status === "processing") {
-            setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 seconds
+            // Safely access the response message
+            const message = result?.body?.message || "AI response received.";
+            document.getElementById("response").innerText = message;
         } else {
-            throw new Error("Unexpected status: " + data.status);
+            setTimeout(() => checkStatus(url), 3000); // Retry after 3 seconds
         }
     } catch (error) {
         console.error("Polling error:", error);
+        setTimeout(() => checkStatus(url), 3000);
     }
 }
+
 
     </script>
 
