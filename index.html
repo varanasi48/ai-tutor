@@ -3,76 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor Debug</title>
+    <title>Logic App Test</title>
 </head>
 <body>
-    <h2>AI Tutor</h2>
-    <button onclick="fetchLecture()">Generate Lecture</button>
-    <p id="responseOutput">Waiting for response...</p>
+    <h2>Logic App API Test</h2>
+    <button onclick="testEndpoint()">Test API</button>
+    <p id="result"></p>
 
     <script>
-        const logicAppUrl = "https://prod-30.southindia.logic.azure.com/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
-
-        async function fetchLecture() {
+        async function testEndpoint() {
+            const url = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";  // 🔹 Replace with actual Logic App URL
+            
             try {
-                const response = await fetch(logicAppUrl, {
+                const response = await fetch(url, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ question: "What is AI?" })  // Replace with dynamic input if needed
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question: "Test connection" })
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    throw new Error(`HTTP Error: ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log("🔍 Initial Response from Logic App:", data); // Debugging
+                console.log("Response:", data);
+                document.getElementById("result").innerText = JSON.stringify(data, null, 2);
 
-                if (data.id) {
-                    checkStatus(data.id);
-                } else {
-                    throw new Error("Invalid response format.");
-                }
             } catch (error) {
-                console.error("❌ Error fetching lecture:", error);
-                document.getElementById("responseOutput").innerText = "Error fetching lecture.";
-            }
-        }
-
-        async function checkStatus(requestId) {
-            try {
-                const statusUrl = `https://prod-30.southindia.logic.azure.com${requestId}?api-version=2016-10-01`;
-                const response = await fetch(statusUrl, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
-
-                const data = await response.json();
-                console.log("🔍 Full Polling Response:", data); // Print full response for debugging
-
-                if (data.properties && data.properties.status === "Succeeded") {
-                    console.log("✅ Final Response:", data);
-
-                    // Print what fields exist
-                    console.log("🔍 Response Keys:", Object.keys(data.properties.response || {}));
-
-                    if (data.properties.response && data.properties.response.answer) {
-                        document.getElementById("responseOutput").innerText = data.properties.response.answer;
-                    } else {
-                        document.getElementById("responseOutput").innerText = "⚠ Answer not found in response.";
-                    }
-                } else if (data.properties.status === "Running") {
-                    console.log("⏳ Still Processing, Retrying...");
-                    setTimeout(() => checkStatus(requestId), 2000);
-                } else {
-                    throw new Error("Unexpected status: " + data.properties.status);
-                }
-            } catch (error) {
-                console.error("❌ Polling error:", error);
+                console.error("Error:", error);
+                document.getElementById("result").innerText = "Error: " + error.message;
             }
         }
     </script>
