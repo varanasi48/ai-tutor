@@ -32,7 +32,7 @@
     <script>
         const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0"; // Replace with your actual Logic App URL
 
-       async function fetchLecture() {
+   async function fetchLecture() {
     const questionInput = document.getElementById("question").value;
     if (!questionInput) {
         alert("Please enter a question.");
@@ -40,13 +40,18 @@
     }
 
     try {
-        const response = await fetch("LOGIC_APP_URL", {
-            method: "POST",
+        const response = await fetch(LOGIC_APP_URL, {  // ✅ FIXED
+            method: "POST",  
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({ question: questionInput })
         });
+
+        // Ensure we are receiving valid JSON
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
 
         const data = await response.json();
         console.log("Initial Response:", data);  // Debugging
@@ -59,30 +64,6 @@
         }
     } catch (error) {
         console.error("Error fetching lecture:", error);
-    }
-}
-
-async function checkStatus(requestId) {
-    try {
-        const response = await fetch(`LOGIC_APP_URL/status/${requestId}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-
-        const data = await response.json();
-        console.log("Polling Response:", data);  // Debugging
-
-        if (data.status === "completed") {
-            document.getElementById("response").innerText = data.answer; // Show response
-        } else if (data.status === "processing") {
-            setTimeout(() => checkStatus(requestId), 2000); // Poll every 2 sec
-        } else {
-            throw new Error("Unexpected status: " + data.status);
-        }
-    } catch (error) {
-        console.error("Polling error:", error);
     }
 }
 
