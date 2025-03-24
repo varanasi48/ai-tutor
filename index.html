@@ -55,20 +55,25 @@
             }
         }
 
-        async function checkStatus(url) {
-            try {
-                const response = await fetch(url);
-                if (response.status === 200) {
-                    const result = await response.json();
-                    document.getElementById("response").innerText = result.body.message || "AI response received.";
-                } else {
-                    setTimeout(() => checkStatus(url), 3000); // Retry after 3 seconds
-                }
-            } catch (error) {
-                console.error("Polling error:", error);
-                setTimeout(() => checkStatus(url), 3000);
-            }
+       async function checkStatus(url) {
+    try {
+        const response = await fetch(url);
+        if (response.status === 200) {
+            const result = await response.json();
+            console.log("Full Response:", result); // Debugging: Print full response
+
+            // Safely access the response message
+            const message = result?.body?.message || "AI response received.";
+            document.getElementById("response").innerText = message;
+        } else {
+            setTimeout(() => checkStatus(url), 3000); // Retry after 3 seconds
         }
+    } catch (error) {
+        console.error("Polling error:", error);
+        setTimeout(() => checkStatus(url), 3000);
+    }
+}
+
     </script>
 </body>
 </html>
