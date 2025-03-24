@@ -6,73 +6,55 @@
     <title>AI Tutor</title>
 </head>
 <body>
-    <h2>AI Tutor</h2>
-    <input type="text" id="questionInput" placeholder="Enter your question">
-    <button onclick="fetchLecture()">Get Lecture</button>
-    <p id="responseOutput"></p>
+    <button onclick="fetchLecture()">Generate Lecture</button>
+    <p id="result"></p>
 
     <script>
         const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
 
         async function fetchLecture() {
-            const question = document.getElementById("questionInput").value;
-            if (!question) {
-                alert("Please enter a question.");
-                return;
-            }
-
             try {
                 const response = await fetch(LOGIC_APP_URL, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ question })
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question: "What is AI?" })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Error: ${response.status} ${response.statusText}`);
-                }
+                const data = await response.json();
+                console.log("Initial Response:", data);
 
-                const result = await response.json();
-                console.log("Initial Response:", result);
-
-                if (result.id) {
-                    checkStatus(result.id);
+                if (data.id) {
+                    document.getElementById("result").innerText = "Processing...";
+                    checkStatus(data.id);
                 } else {
-                    throw new Error("No request ID returned.");
+                    throw new Error("Invalid Response Format");
                 }
             } catch (error) {
                 console.error("Error fetching lecture:", error);
-                document.getElementById("responseOutput").innerText = "Error fetching lecture.";
             }
         }
 
         async function checkStatus(requestId) {
             try {
                 const statusUrl = `${LOGIC_APP_URL}/runs/${requestId}`;
-                console.log("Polling URL:", statusUrl);
 
                 const response = await fetch(statusUrl, {
                     method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
+                    headers: { "Content-Type": "application/json" }
                 });
 
                 const data = await response.json();
                 console.log("Polling Response:", data);
 
-                if (data.properties?.status === "Succeeded" && data.properties?.outputs?.answer) {
-                    document.getElementById("responseOutput").innerText = data.properties.outputs.answer;
-                } else if (data.properties?.status === "Running") {
+                if (data.status === "Succeeded" && data.properties.outputs) {
+                    document.getElementById("result").innerText = data.properties.outputs.answer || "No answer found";
+                } else if (data.status === "Running") {
                     setTimeout(() => checkStatus(requestId), 2000);
                 } else {
-                    throw new Error("Unexpected status: " + data.properties?.status);
+                    throw new Error("Unexpected Status: " + data.status);
                 }
             } catch (error) {
                 console.error("Polling error:", error);
-                document.getElementById("responseOutput").innerText = "Error retrieving lecture.";
             }
         }
     </script>
