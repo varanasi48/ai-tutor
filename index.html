@@ -38,7 +38,6 @@
             cursor: pointer;
             font-size: 16px;
             margin-top: 10px;
-            transition: 0.3s;
         }
         button:hover {
             background: #45a049;
@@ -48,21 +47,21 @@
             font-weight: bold;
             font-size: 18px;
             min-height: 50px;
-            text-align: left;
-            padding: 10px;
-            background: #ffffff;
-            border-radius: 5px;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
         }
         .media-container {
-            margin-top: 15px;
+            margin-top: 20px;
+            text-align: center;
         }
-        img, video {
+        img {
             max-width: 100%;
-            display: block;
-            margin: 10px auto;
+            height: auto;
+            margin-top: 10px;
             border-radius: 5px;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        video {
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 5px;
         }
         .typing-effect {
             font-family: monospace;
@@ -82,7 +81,7 @@
     <div class="container">
         <input type="text" id="question" placeholder="Enter your question">
         <button onclick="fetchLecture()">Ask AI</button>
-        <div id="response">Waiting for response...</div>
+        <p id="response">Waiting for response...</p>
     </div>
 
     <script>
@@ -148,53 +147,38 @@
 
             let formattedResponse = `<p class="typing-effect">${answer}</p>`;
 
-            // Add images if available
+            // Add images
             if (images.length > 0) {
                 formattedResponse += `<div class="media-container"><h3>Related Images:</h3>`;
                 images.forEach(img => {
-                    formattedResponse += `<img src="${img}" alt="Reference Image">`;
+                    if (img.endsWith(".jpg") || img.endsWith(".png") || img.endsWith(".jpeg")) {
+                        formattedResponse += `<img src="${img}" alt="Reference Image">`;
+                    } else {
+                        formattedResponse += `<p>🔗 <a href="${img}" target="_blank">View Image</a></p>`;
+                    }
                 });
                 formattedResponse += `</div>`;
             }
 
-            // Add videos if available
+            // Add videos
             if (videos.length > 0) {
                 formattedResponse += `<div class="media-container"><h3>Related Videos:</h3>`;
                 videos.forEach(vid => {
-                    formattedResponse += `
-                        <video controls>
-                            <source src="${vid}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                    `;
+                    if (vid.endsWith(".mp4")) {
+                        formattedResponse += `
+                            <video controls>
+                                <source src="${vid}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        `;
+                    } else {
+                        formattedResponse += `<p>🔗 <a href="${vid}" target="_blank">Watch Video</a></p>`;
+                    }
                 });
                 formattedResponse += `</div>`;
             }
 
-            // Update UI
             responseElement.innerHTML = formattedResponse;
-
-            // Apply typing effect
-            displayTypingEffect(answer);
-        }
-
-        function displayTypingEffect(text) {
-            const responseElement = document.getElementById("response");
-            responseElement.innerHTML = "";
-            let index = 0;
-
-            function type() {
-                if (index < text.length) {
-                    responseElement.innerHTML += text[index];
-                    index++;
-                    setTimeout(type, 40);
-                } else {
-                    responseElement.classList.remove("typing-effect");
-                }
-            }
-
-            responseElement.classList.add("typing-effect");
-            type();
         }
     </script>
 
