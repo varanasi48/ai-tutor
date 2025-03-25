@@ -5,15 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Tutor</title>
     <style>
-        body { 
-            font-family: 'Arial', sans-serif; 
-            text-align: center; 
-            padding: 20px; 
-            background: #f4f4f9;
-        }
-        h1 {
-            color: #333;
-        }
+        body { font-family: 'Arial', sans-serif; text-align: center; padding: 20px; background: #f4f4f9; }
+        h1 { color: #333; }
         .container {
             max-width: 600px;
             margin: auto;
@@ -22,9 +15,10 @@
             border-radius: 10px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         }
-        input {
+        input, button {
             width: 80%;
             padding: 10px;
+            margin: 10px 5px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
@@ -32,47 +26,13 @@
         button {
             background: #4CAF50;
             color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
         }
-        button:hover {
-            background: #45a049;
-        }
-        #response {
-            margin-top: 20px;
-            font-weight: bold;
-            font-size: 18px;
-            min-height: 50px;
-        }
-        .media-container {
-            margin-top: 20px;
-            text-align: center;
-        }
-        img {
-            max-width: 100%;
-            height: auto;
-            margin-top: 10px;
-            border-radius: 5px;
-        }
-        video {
-            max-width: 100%;
-            margin-top: 10px;
-            border-radius: 5px;
-        }
-        .typing-effect {
-            font-family: monospace;
-            white-space: pre-wrap;
-            border-left: 3px solid black;
-            padding-left: 5px;
-            animation: blink 0.8s infinite;
-        }
-        @keyframes blink {
-            50% { border-color: transparent; }
-        }
+        button:hover { background: #45a049; }
+        #response { margin-top: 20px; font-size: 18px; min-height: 50px; text-align: left; }
+        .image-container img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+        video { width: 100%; margin-top: 10px; border-radius: 8px; }
+        canvas { width: 100%; height: 200px; border: 1px solid #000; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -81,7 +41,8 @@
     <div class="container">
         <input type="text" id="question" placeholder="Enter your question">
         <button onclick="fetchLecture()">Ask AI</button>
-        <p id="response">Waiting for response...</p>
+        <div id="response">Waiting for response...</div>
+        <canvas id="scrollingText"></canvas>
     </div>
 
     <script>
@@ -113,7 +74,7 @@
                     }
                 } else if (response.status === 200) {
                     const result = await response.json();
-                    displayResponse(result);
+                    displayLecture(result);
                 } else {
                     document.getElementById("response").innerText = "❌ Error connecting to AI Tutor.";
                 }
@@ -129,7 +90,7 @@
                 if (response.status === 200) {
                     const result = await response.json();
                     console.log("Full Response:", result);
-                    displayResponse(result);
+                    displayLecture(result);
                 } else {
                     setTimeout(() => checkStatus(url), 3000);
                 }
@@ -139,46 +100,62 @@
             }
         }
 
-        function displayResponse(result) {
-            const responseElement = document.getElementById("response");
-            const answer = result?.answer || "AI response received.";
-            const images = result?.images || [];
-            const videos = result?.videos || [];
+        function displayLecture(result) {
+            const responseContainer = document.getElementById("response");
+            responseContainer.innerHTML = "";  // Clear previous response
 
-            let formattedResponse = `<p class="typing-effect">${answer}</p>`;
+            // Display the main lecture text
+            const lectureText = document.createElement("p");
+            lectureText.textContent = result?.answer || "No lecture content available.";
+            responseContainer.appendChild(lectureText);
 
-            // Add images
-            if (images.length > 0) {
-                formattedResponse += `<div class="media-container"><h3>Related Images:</h3>`;
-                images.forEach(img => {
-                    if (img.endsWith(".jpg") || img.endsWith(".png") || img.endsWith(".jpeg")) {
-                        formattedResponse += `<img src="${img}" alt="Reference Image">`;
-                    } else {
-                        formattedResponse += `<p>🔗 <a href="${img}" target="_blank">View Image</a></p>`;
-                    }
+            // Display images if available
+            if (result?.images?.length) {
+                result.images.forEach(imgUrl => {
+                    const img = document.createElement("img");
+                    img.src = imgUrl;
+                    img.alt = "Lecture Image";
+                    img.className = "image-container";
+                    responseContainer.appendChild(img);
                 });
-                formattedResponse += `</div>`;
             }
 
-            // Add videos
-            if (videos.length > 0) {
-                formattedResponse += `<div class="media-container"><h3>Related Videos:</h3>`;
-                videos.forEach(vid => {
-                    if (vid.endsWith(".mp4")) {
-                        formattedResponse += `
-                            <video controls>
-                                <source src="${vid}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                        `;
-                    } else {
-                        formattedResponse += `<p>🔗 <a href="${vid}" target="_blank">Watch Video</a></p>`;
-                    }
+            // Display videos if available
+            if (result?.videos?.length) {
+                result.videos.forEach(videoUrl => {
+                    const video = document.createElement("video");
+                    video.setAttribute("controls", "");
+                    const source = document.createElement("source");
+                    source.src = videoUrl;
+                    source.type = "video/mp4";
+                    video.appendChild(source);
+                    responseContainer.appendChild(video);
                 });
-                formattedResponse += `</div>`;
             }
 
-            responseElement.innerHTML = formattedResponse;
+            // Start scrolling text effect
+            startScrollingText(result?.answer || "No lecture text available.");
+        }
+
+        function startScrollingText(text) {
+            const canvas = document.getElementById("scrollingText");
+            const ctx = canvas.getContext("2d");
+            let y = canvas.height;
+
+            ctx.font = "18px Arial";
+            ctx.fillStyle = "black";
+
+            function scroll() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillText(text, 10, y);
+                y -= 1; // Adjust speed of scrolling
+
+                if (y > -30) {
+                    requestAnimationFrame(scroll);
+                }
+            }
+
+            scroll();
         }
     </script>
 
