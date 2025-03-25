@@ -5,16 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Tutor</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        input, button { padding: 10px; margin: 10px; }
-        #response { margin-top: 20px; font-weight: bold; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+            background: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        input {
+            width: 80%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #response {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 18px;
+            min-height: 50px;
+        }
+        .typing-effect {
+            font-family: monospace;
+            white-space: pre-wrap;
+            border-left: 2px solid black;
+            padding-left: 5px;
+            animation: blink 0.8s infinite;
+        }
+        @keyframes blink {
+            50% { border-color: transparent; }
+        }
     </style>
 </head>
 <body>
+
     <h1>AI Tutor</h1>
-    <input type="text" id="question" placeholder="Enter your question">
-    <button onclick="fetchLecture()">Ask AI</button>
-    <p id="response">Waiting for response...</p>
+    <div class="container">
+        <input type="text" id="question" placeholder="Enter your question">
+        <button onclick="fetchLecture()">Ask AI</button>
+        <p id="response">Waiting for response...</p>
+    </div>
 
     <script>
         async function fetchLecture() {
@@ -37,15 +90,15 @@
 
                 if (response.status === 202) {
                     document.getElementById("response").innerText = "⏳ AI is thinking...";
-                    const location = response.headers.get("Location"); // Get response URL
+                    const location = response.headers.get("Location");
                     if (location) {
-                        checkStatus(location); // Pass the location URL to check status
+                        checkStatus(location);
                     } else {
                         document.getElementById("response").innerText = "❌ No result URL provided.";
                     }
                 } else if (response.status === 200) {
                     const result = await response.json();
-                    document.getElementById("response").innerText = result.answer || "No answer available";
+                    displayTypingEffect(result.answer || "No answer available");
                 } else {
                     document.getElementById("response").innerText = "❌ Error connecting to AI Tutor.";
                 }
@@ -60,19 +113,38 @@
                 const response = await fetch(url);
                 if (response.status === 200) {
                     const result = await response.json();
-                    console.log("Full Response:", result); // Debugging: Print full response
+                    console.log("Full Response:", result);
 
-                    // Now accessing answer directly from the response
-                    const answer = result?.answer || "AI response received."; // Using result.answer directly
-                    document.getElementById("response").innerText = answer; // Update the UI with the answer
+                    const answer = result?.answer || "AI response received.";
+                    displayTypingEffect(answer);
                 } else {
-                    setTimeout(() => checkStatus(url), 3000); // Retry after 3 seconds
+                    setTimeout(() => checkStatus(url), 3000);
                 }
             } catch (error) {
                 console.error("Polling error:", error);
                 setTimeout(() => checkStatus(url), 3000);
             }
         }
+
+        function displayTypingEffect(text) {
+            const responseElement = document.getElementById("response");
+            responseElement.innerHTML = "";
+            let index = 0;
+
+            function type() {
+                if (index < text.length) {
+                    responseElement.innerHTML += text[index];
+                    index++;
+                    setTimeout(type, 50);
+                } else {
+                    responseElement.classList.remove("typing-effect");
+                }
+            }
+
+            responseElement.classList.add("typing-effect");
+            type();
+        }
     </script>
+
 </body>
 </html>
