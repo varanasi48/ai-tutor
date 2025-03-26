@@ -1,63 +1,57 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const generateButton = document.getElementById("generateVideoButton");
-    if (generateButton) {
-        generateButton.addEventListener("click", generateVideo);
-    }
+    document.getElementById("generateVideoButton").addEventListener("click", generateVideo);
 });
 
 async function generateVideo() {
-    const text = document.getElementById("response")?.innerText;
-    if (!text) {
-        alert("No AI response available to generate video.");
-        return;
-    }
+    const text = document.getElementById("response")?.innerText || "Default AI Lecture Text";
+    
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = 720;
+    canvas.height = 1280;
 
-    const preloader = document.getElementById("preloader");
-    if (preloader) {
-        preloader.style.display = 'block';
-        preloader.innerText = "⏳ Generating video...";
-    }
+    let y = canvas.height; // Start text from bottom
+    const speed = 2; // Scroll speed
 
-    try {
-        const LOGIC_APP_URL = "YOUR_LOGIC_APP_URL_HERE"; // Replace with your Logic App URL
+    const stream = canvas.captureStream(30);
+    const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+    let chunks = [];
 
-        const response = await fetch(LOGIC_APP_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text })
-        });
+    recorder.ondataavailable = (event) => chunks.push(event.data);
+    recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        const videoURL = URL.createObjectURL(blob);
+        displayVideo(videoURL);
+    };
 
-        if (!response.ok) {
-            throw new Error("Failed to send request to Logic App");
+    recorder.start();
+
+    function drawFrame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        ctx.font = "40px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(text, canvas.width / 2, y);
+        
+        y -= speed;
+        if (y + 40 > 0) {
+            requestAnimationFrame(drawFrame);
+        } else {
+            recorder.stop();
         }
-
-        const result = await response.json();
-        if (!result.videoUrl) {
-            throw new Error("Logic App response did not include a video URL");
-        }
-
-        preloader.innerText = "✅ Video Ready!";
-        displayVideo(result.videoUrl);
-    } catch (error) {
-        console.error("Error in Logic App request:", error);
-        preloader.innerText = "❌ Video generation failed.";
     }
+
+    drawFrame();
 }
 
 function displayVideo(videoUrl) {
-    if (!videoUrl) return;
-    const preloader = document.getElementById("preloader");
-    if (preloader) preloader.style.display = 'none';
-
     const videoPreview = document.getElementById("videoPreview");
-    if (videoPreview) {
-        videoPreview.src = videoUrl;
-        videoPreview.style.display = 'block';
-    }
+    videoPreview.src = videoUrl;
+    videoPreview.style.display = "block";
 
     const downloadBtn = document.getElementById("downloadBtn");
-    if (downloadBtn) {
-        downloadBtn.href = videoUrl;
-        downloadBtn.style.display = 'block';
-    }
+    downloadBtn.href = videoUrl;
+    downloadBtn.style.display = "block";
 }
