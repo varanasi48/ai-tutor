@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         generateButton.addEventListener("click", generateVideo);
     }
 
-    await loadFFmpeg(); // Load FFmpeg.js on page load
+    await loadFFmpeg(); // Load FFmpeg on page load
 });
 
 async function loadFFmpeg() {
@@ -27,7 +27,7 @@ async function generateVideo() {
     const preloader = document.getElementById("preloader");
     if (preloader) {
         preloader.style.display = "block";
-        preloader.innerText = "⏳ Processing video...";
+        preloader.innerText = "⏳ Generating video...";
     }
 
     try {
@@ -36,11 +36,15 @@ async function generateVideo() {
             return;
         }
 
-        const inputText = new Blob([text], { type: "text/plain" });
         const inputFileName = "input.txt";
-        window.ffmpeg.FS("writeFile", inputFileName, await inputText.arrayBuffer());
+        window.ffmpeg.FS("writeFile", inputFileName, new TextEncoder().encode(text));
 
-        await window.ffmpeg.run("-f", "lavfi", "-i", "color=c=black:s=1280x720:d=5", "-vf", `drawtext=text='${text}':fontcolor=white:fontsize=24:x=100:y=100`, "output.mp4");
+        await window.ffmpeg.run(
+            "-f", "lavfi",
+            "-i", "color=c=black:s=1280x720:d=5",
+            "-vf", `drawtext=text='${text}':fontcolor=white:fontsize=24:x=100:y=100`,
+            "output.mp4"
+        );
 
         const outputData = window.ffmpeg.FS("readFile", "output.mp4");
         const videoBlob = new Blob([outputData.buffer], { type: "video/mp4" });
@@ -62,5 +66,11 @@ function displayVideo(videoUrl) {
     if (videoPreview) {
         videoPreview.src = videoUrl;
         videoPreview.style.display = "block";
+    }
+
+    const downloadBtn = document.getElementById("downloadBtn");
+    if (downloadBtn) {
+        downloadBtn.href = videoUrl;
+        downloadBtn.style.display = "block";
     }
 }
