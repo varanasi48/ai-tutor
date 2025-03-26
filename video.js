@@ -21,15 +21,30 @@ async function generateVideo() {
     }
 
     const text = responseElement.innerText || "Default AI Lecture Text";
-    
-    // ✅ Ensure canvas and video capture setup
+    const words = text.split(" "); // Split text into words
+    const lines = [];
+    let line = "";
+
+    // ✅ Wrap text into lines (5 words per line)
+    words.forEach((word, index) => {
+        if ((line + word).length > 30 || index === words.length - 1) {
+            lines.push(line);
+            line = word;
+        } else {
+            line += " " + word;
+        }
+    });
+    if (line) lines.push(line);
+
+    // ✅ Set up canvas and video
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = 720;
     canvas.height = 1280;
+    const lineHeight = 50;
 
-    let y = canvas.height; // Start text from bottom
-    const speed = 2; // Scroll speed
+    let y = canvas.height + lines.length * lineHeight; // Start text off-screen
+    const speed = 3; // Scroll speed
 
     const stream = canvas.captureStream(30);
     const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
@@ -62,10 +77,15 @@ async function generateVideo() {
         ctx.fillStyle = "white";
         ctx.font = "40px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(text, canvas.width / 2, y);
+
+        // ✅ Draw all lines
+        lines.forEach((line, i) => {
+            ctx.fillText(line, canvas.width / 2, y + i * lineHeight);
+        });
 
         y -= speed;
-        if (y + 40 > 0) {
+
+        if (y + lines.length * lineHeight > 0) {
             requestAnimationFrame(drawFrame);
         } else {
             console.log("🎞 Stopping recording...");
@@ -78,7 +98,7 @@ async function generateVideo() {
 
 function displayVideo(videoUrl) {
     console.log("🎥 Displaying video...");
-    
+
     const videoPreview = document.getElementById("videoPreview");
     if (!videoPreview) {
         console.error("❌ Element with ID 'videoPreview' not found.");
