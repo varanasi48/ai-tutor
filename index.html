@@ -47,7 +47,7 @@
         <button onclick="fetchLecture()">Ask AI</button>
         <div id="response">Waiting for response...</div>
 
-        <button onclick="generateVideo()">Generate Video</button>
+        <button id="generateVideoButton" onclick="generateVideo()">Generate Video</button>
         <div id="preloader" style="display:none; font-size:18px; color:#007bff; margin-top:10px;">⏳ Generating video... Please wait.</div>
 <video id="videoPreview" controls style="display:none; width: 100%; margin-top:10px;"></video>
 <a id="downloadBtn" style="display:none; margin-top:10px;" download="video.mp4">Download Video</a>
