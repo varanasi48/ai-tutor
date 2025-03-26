@@ -1,14 +1,16 @@
 async function generateVideo() {
-    const text = document.getElementById("response").innerText;
+    const text = document.getElementById("response")?.innerText;
     if (!text) {
         alert("No AI response available to generate video.");
         return;
     }
 
-    // Show preloader
+    // Show preloader if it exists
     const preloader = document.getElementById("preloader");
-    preloader.style.display = 'block';
-    preloader.innerText = "⏳ Generating video... Please wait.";
+    if (preloader) {
+        preloader.style.display = 'block';
+        preloader.innerText = "⏳ Generating video... Please wait.";
+    }
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -49,16 +51,22 @@ async function generateVideo() {
     const ffmpeg = await loadFFmpeg();
     const videoFile = await createVideoWithFFmpeg(frames, ffmpeg);
 
-    // Hide preloader and show video
-    preloader.style.display = 'none';
+    // Hide preloader if it exists
+    if (preloader) preloader.style.display = 'none';
+    
+    // Show video preview
     const videoPreview = document.getElementById("videoPreview");
-    videoPreview.src = URL.createObjectURL(videoFile);
-    videoPreview.style.display = 'block';
+    if (videoPreview) {
+        videoPreview.src = URL.createObjectURL(videoFile);
+        videoPreview.style.display = 'block';
+    }
     
     // Enable download button
     const downloadBtn = document.getElementById("downloadBtn");
-    downloadBtn.href = URL.createObjectURL(videoFile);
-    downloadBtn.style.display = 'block';
+    if (downloadBtn) {
+        downloadBtn.href = URL.createObjectURL(videoFile);
+        downloadBtn.style.display = 'block';
+    }
 }
 
 async function loadFFmpeg() {
