@@ -21,11 +21,10 @@ async function generateVideo() {
     }
 
     const text = responseElement.innerText || "Default AI Lecture Text";
-    const words = text.split(" "); // Split text into words
+    const words = text.split(" "); 
     const lines = [];
     let line = "";
 
-    // ✅ Wrap text into lines (5 words per line)
     words.forEach((word, index) => {
         if ((line + word).length > 30 || index === words.length - 1) {
             lines.push(line);
@@ -43,8 +42,8 @@ async function generateVideo() {
     canvas.height = 1280;
     const lineHeight = 50;
 
-    let y = canvas.height + lines.length * lineHeight; // Start text off-screen
-    const speed = 3; // Scroll speed
+    let y = canvas.height; 
+    const speed = 6; // ✅ Increase speed to reduce delay
 
     const stream = canvas.captureStream(30);
     const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
@@ -78,7 +77,7 @@ async function generateVideo() {
         ctx.font = "40px Arial";
         ctx.textAlign = "center";
 
-        // ✅ Draw all lines
+        // ✅ Draw all lines properly
         lines.forEach((line, i) => {
             ctx.fillText(line, canvas.width / 2, y + i * lineHeight);
         });
@@ -116,4 +115,34 @@ function displayVideo(videoUrl) {
 
     downloadBtn.href = videoUrl;
     downloadBtn.style.display = "block";
+}
+
+/* 🖼️ ✅ Display images in UI instead of links */
+function displayImages(imageUrls) {
+    const imageContainer = document.getElementById("imageContainer");
+    imageContainer.innerHTML = ""; // Clear previous content
+
+    imageUrls.forEach((url) => {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = "Reference Image";
+        img.style.maxWidth = "300px";
+        img.style.display = "block";
+        img.style.margin = "10px auto";
+        imageContainer.appendChild(img);
+    });
+}
+
+/* 🎬 ✅ Embed reference videos */
+function displayVideos(videoUrls) {
+    const videoContainer = document.getElementById("videoContainer");
+    videoContainer.innerHTML = ""; 
+
+    videoUrls.forEach((url) => {
+        const videoElement = document.createElement("video");
+        videoElement.src = url;
+        videoElement.controls = true;
+        videoElement.style.width = "320px";
+        videoContainer.appendChild(videoElement);
+    });
 }
