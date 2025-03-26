@@ -8,36 +8,37 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function loadFFmpeg() {
-    if (typeof createFFmpeg !== "undefined") {
-        window.ffmpeg = createFFmpeg({ log: true });
+    if (typeof createFFmpeg !== "function") {
+        console.error("❌ FFmpeg.js not found! Check if it's included in index.html.");
+        return;
+    }
+
+    window.ffmpeg = createFFmpeg({ log: true });
+
+    try {
+        console.log("⏳ Loading FFmpeg.js...");
         await window.ffmpeg.load();
         console.log("✅ FFmpeg.js Loaded Successfully");
-    } else {
-        console.error("❌ FFmpeg.js not found! Check if it's included in index.html.");
+    } catch (error) {
+        console.error("❌ FFmpeg failed to load:", error);
     }
 }
 
 async function generateVideo() {
-    const text = document.getElementById("response")?.innerText;
-    if (!text) {
-        alert("No AI response available to generate video.");
+    if (!window.ffmpeg || !window.ffmpeg.isLoaded()) {
+        console.error("❌ FFmpeg.js is not loaded yet!");
         return;
     }
 
-    const preloader = document.getElementById("preloader");
-    if (preloader) {
-        preloader.style.display = 'block';
-        preloader.innerText = "⏳ Generating video...";
-    }
-
+    console.log("🎬 Generating video...");
     try {
-        if (!window.ffmpeg || !window.ffmpeg.isLoaded()) {
-            console.error("❌ FFmpeg.js is not loaded!");
+        const text = document.getElementById("response")?.innerText;
+        if (!text) {
+            alert("No AI response available to generate video.");
             return;
         }
 
-        const inputFileName = "input.txt";
-        window.ffmpeg.FS("writeFile", inputFileName, new TextEncoder().encode(text));
+        window.ffmpeg.FS("writeFile", "input.txt", new TextEncoder().encode(text));
 
         await window.ffmpeg.run(
             "-f", "lavfi",
@@ -53,14 +54,11 @@ async function generateVideo() {
         displayVideo(videoUrl);
     } catch (error) {
         console.error("❌ Error generating video:", error);
-        if (preloader) preloader.innerText = "❌ Video processing failed.";
     }
 }
 
 function displayVideo(videoUrl) {
     if (!videoUrl) return;
-    const preloader = document.getElementById("preloader");
-    if (preloader) preloader.style.display = 'none';
 
     const videoPreview = document.getElementById("videoPreview");
     if (videoPreview) {
