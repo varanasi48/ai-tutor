@@ -1,3 +1,10 @@
+document.addEventListener("DOMContentLoaded", () => {
+    const generateButton = document.getElementById("generateVideoButton");
+    if (generateButton) {
+        generateButton.addEventListener("click", generateVideo);
+    }
+});
+
 async function generateVideo() {
     const text = document.getElementById("response")?.innerText;
     if (!text) {
@@ -5,7 +12,6 @@ async function generateVideo() {
         return;
     }
 
-    // Show preloader if it exists
     const preloader = document.getElementById("preloader");
     if (preloader) {
         preloader.style.display = 'block';
@@ -47,29 +53,34 @@ async function generateVideo() {
         frames.push(canvas.toDataURL("image/png"));
     }
 
-    // Use FFmpeg.js to create a video in the browser
-    const ffmpeg = await loadFFmpeg();
-    const videoFile = await createVideoWithFFmpeg(frames, ffmpeg);
-
-    // Hide preloader if it exists
-    if (preloader) preloader.style.display = 'none';
-    
-    // Show video preview
-    const videoPreview = document.getElementById("videoPreview");
-    if (videoPreview) {
-        videoPreview.src = URL.createObjectURL(videoFile);
-        videoPreview.style.display = 'block';
-    }
-    
-    // Enable download button
-    const downloadBtn = document.getElementById("downloadBtn");
-    if (downloadBtn) {
-        downloadBtn.href = URL.createObjectURL(videoFile);
-        downloadBtn.style.display = 'block';
+    try {
+        const ffmpeg = await loadFFmpeg();
+        const videoFile = await createVideoWithFFmpeg(frames, ffmpeg);
+        
+        if (preloader) preloader.style.display = 'none';
+        
+        const videoPreview = document.getElementById("videoPreview");
+        if (videoPreview) {
+            videoPreview.src = URL.createObjectURL(videoFile);
+            videoPreview.style.display = 'block';
+        }
+        
+        const downloadBtn = document.getElementById("downloadBtn");
+        if (downloadBtn) {
+            downloadBtn.href = URL.createObjectURL(videoFile);
+            downloadBtn.style.display = 'block';
+        }
+    } catch (error) {
+        console.error("Video generation failed:", error);
+        if (preloader) preloader.innerText = "❌ Error generating video.";
     }
 }
 
 async function loadFFmpeg() {
+    if (!window.FFmpeg) {
+        console.error("FFmpeg.js not found! Make sure the script is included.");
+        return;
+    }
     const { createFFmpeg } = FFmpeg;
     const ffmpeg = createFFmpeg({ log: true });
     await ffmpeg.load();
@@ -77,7 +88,7 @@ async function loadFFmpeg() {
 }
 
 async function createVideoWithFFmpeg(frames, ffmpeg) {
-    const frameFiles = frames.map((dataUrl, index) => {
+    frames.forEach((dataUrl, index) => {
         const byteString = atob(dataUrl.split(',')[1]);
         const arrayBuffer = new Uint8Array(byteString.length);
         for (let i = 0; i < byteString.length; i++) {
@@ -90,5 +101,3 @@ async function createVideoWithFFmpeg(frames, ffmpeg) {
     const data = ffmpeg.FS("readFile", "output.mp4");
     return new Blob([data.buffer], { type: "video/mp4" });
 }
-
-window.generateVideo = generateVideo;
