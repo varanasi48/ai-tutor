@@ -1,74 +1,42 @@
-document.addEventListener("DOMContentLoaded", async () => {
-    await loadFFmpeg();
+document.addEventListener("DOMContentLoaded", () => {
     const generateButton = document.getElementById("generateVideoButton");
     if (generateButton) {
         generateButton.addEventListener("click", generateVideo);
     }
 });
 
-async function loadFFmpeg() {
-    if (typeof FFmpeg === "undefined" || !FFmpeg.createFFmpeg) {
-        console.error("❌ FFmpeg.js not found! Check if it's included in index.html.");
-        return;
-    }
-
-    const { createFFmpeg, fetchFile } = FFmpeg; // ✅ Extract functions properly
-    window.ffmpeg = createFFmpeg({ log: true });
-
-    try {
-        console.log("⏳ Loading FFmpeg.js...");
-        await window.ffmpeg.load();
-        console.log("✅ FFmpeg.js Loaded Successfully");
-    } catch (error) {
-        console.error("❌ FFmpeg failed to load:", error);
-    }
-}
-
 async function generateVideo() {
-    if (!window.ffmpeg || !window.ffmpeg.isLoaded()) {
-        console.error("❌ FFmpeg.js is not loaded yet!");
+    const text = document.getElementById("response")?.innerText;
+    if (!text) {
+        alert("No AI response available to generate video.");
         return;
     }
 
-    console.log("🎬 Generating video...");
+    const preloader = document.getElementById("preloader");
+    if (preloader) {
+        preloader.style.display = 'block';
+        preloader.innerText = "⏳ Sending request...";
+    }
+
     try {
-        const text = document.getElementById("response")?.innerText;
-        if (!text) {
-            alert("No AI response available to generate video.");
-            return;
+        // Fetch Azure Function Key from Environment Variable
+        const FUNCTION_KEY = process.env.AZURE_FUNCTION_KEY;  // Injected via GitHub Actions
+        const FUNCTION_APP_URL = `https://ai-tutor-video.azurewebsites.net/api/generate?code=${FUNCTION_KEY}`;
+
+        const response = await fetch(FUNCTION_APP_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text })
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to send data to Function App");
         }
 
-        window.ffmpeg.FS("writeFile", "input.txt", new TextEncoder().encode(text));
-
-        await window.ffmpeg.run(
-            "-f", "lavfi",
-            "-i", "color=c=black:s=1280x720:d=5",
-            "-vf", `drawtext=text='${text}':fontcolor=white:fontsize=24:x=100:y=100`,
-            "output.mp4"
-        );
-
-        const outputData = window.ffmpeg.FS("readFile", "output.mp4");
-        const videoBlob = new Blob([outputData.buffer], { type: "video/mp4" });
-        const videoUrl = URL.createObjectURL(videoBlob);
-
-        displayVideo(videoUrl);
+        const result = await response.json();
+        await checkVideoStatus(result.videoRequestId);
     } catch (error) {
-        console.error("❌ Error generating video:", error);
-    }
-}
-
-function displayVideo(videoUrl) {
-    if (!videoUrl) return;
-
-    const videoPreview = document.getElementById("videoPreview");
-    if (videoPreview) {
-        videoPreview.src = videoUrl;
-        videoPreview.style.display = 'block';
-    }
-
-    const downloadBtn = document.getElementById("downloadBtn");
-    if (downloadBtn) {
-        downloadBtn.href = videoUrl;
-        downloadBtn.style.display = 'block';
+        console.error("❌ Error in Function App request:", error);
+        if (preloader) preloader.innerText = "❌ Error processing request.";
     }
 }
