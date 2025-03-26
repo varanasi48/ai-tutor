@@ -1,3 +1,10 @@
+document.addEventListener("DOMContentLoaded", () => {
+    const generateButton = document.getElementById("generateVideoButton");
+    if (generateButton) {
+        generateButton.addEventListener("click", generateVideo);
+    }
+});
+
 async function generateVideo() {
     const text = document.getElementById("response")?.innerText;
     if (!text) {
@@ -8,34 +15,49 @@ async function generateVideo() {
     const preloader = document.getElementById("preloader");
     if (preloader) {
         preloader.style.display = 'block';
-        preloader.innerText = "⏳ Sending to Function App...";
+        preloader.innerText = "⏳ Generating video...";
     }
 
     try {
-        // Fetch Function App URL and Key from GitHub Secrets
-        const FUNCTION_APP_URL = "https://ai-tutor-video.azurewebsites.net/api/generate";
-        const FUNCTION_KEY = process.env.FUNCTION_APP_KEY; // 🔹 Secret from GitHub
+        const LOGIC_APP_URL = "YOUR_LOGIC_APP_URL_HERE"; // Replace with your Logic App URL
 
-        if (!FUNCTION_KEY) {
-            throw new Error("❌ Function key not found. Ensure it's set in GitHub Secrets.");
-        }
-
-        const response = await fetch(`${FUNCTION_APP_URL}?code=${FUNCTION_KEY}`, {
+        const response = await fetch(LOGIC_APP_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text })
         });
 
         if (!response.ok) {
-            throw new Error("❌ Failed to send data to Function App");
+            throw new Error("Failed to send request to Logic App");
         }
 
         const result = await response.json();
-        if (preloader) preloader.innerText = "⏳ Waiting for video from Function App...";
+        if (!result.videoUrl) {
+            throw new Error("Logic App response did not include a video URL");
+        }
 
-        await checkVideoStatus(result.videoRequestId);
+        preloader.innerText = "✅ Video Ready!";
+        displayVideo(result.videoUrl);
     } catch (error) {
-        console.error("❌ Error in Function App request:", error);
-        if (preloader) preloader.innerText = "❌ Error processing request.";
+        console.error("Error in Logic App request:", error);
+        preloader.innerText = "❌ Video generation failed.";
+    }
+}
+
+function displayVideo(videoUrl) {
+    if (!videoUrl) return;
+    const preloader = document.getElementById("preloader");
+    if (preloader) preloader.style.display = 'none';
+
+    const videoPreview = document.getElementById("videoPreview");
+    if (videoPreview) {
+        videoPreview.src = videoUrl;
+        videoPreview.style.display = 'block';
+    }
+
+    const downloadBtn = document.getElementById("downloadBtn");
+    if (downloadBtn) {
+        downloadBtn.href = videoUrl;
+        downloadBtn.style.display = 'block';
     }
 }
