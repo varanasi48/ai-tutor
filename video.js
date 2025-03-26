@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", async () => {
     await loadFFmpeg();
-
     const generateButton = document.getElementById("generateVideoButton");
     if (generateButton) {
         generateButton.addEventListener("click", generateVideo);
@@ -8,11 +7,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function loadFFmpeg() {
-    if (typeof createFFmpeg !== "function") {
+    if (typeof FFmpeg === "undefined" || !FFmpeg.createFFmpeg) {
         console.error("❌ FFmpeg.js not found! Check if it's included in index.html.");
         return;
     }
 
+    const { createFFmpeg, fetchFile } = FFmpeg; // ✅ Extract functions properly
     window.ffmpeg = createFFmpeg({ log: true });
 
     try {
