@@ -1,55 +1,76 @@
-// Load FFmpeg from WebAssembly (WASM)
+document.addEventListener("DOMContentLoaded", async () => {
+    await loadFFmpeg();
+
+    const generateButton = document.getElementById("generateVideoButton");
+    if (generateButton) {
+        generateButton.addEventListener("click", generateVideo);
+    }
+});
+
 async function loadFFmpeg() {
-    // Ensure FFmpeg is available globally
-    if (typeof FFmpeg.createFFmpeg === "undefined") {
-        console.error("❌ FFmpeg.js not loaded! Check if it's included in index.html.");
-        return null;
+    if (typeof createFFmpeg !== "undefined") {
+        window.ffmpeg = createFFmpeg({ log: true });
+        await window.ffmpeg.load();
+        console.log("✅ FFmpeg.js Loaded Successfully");
+    } else {
+        console.error("❌ FFmpeg.js not found! Check if it's included in index.html.");
+    }
+}
+
+async function generateVideo() {
+    const text = document.getElementById("response")?.innerText;
+    if (!text) {
+        alert("No AI response available to generate video.");
+        return;
     }
 
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const ffmpeg = createFFmpeg({ log: true });
+    const preloader = document.getElementById("preloader");
+    if (preloader) {
+        preloader.style.display = 'block';
+        preloader.innerText = "⏳ Generating video...";
+    }
 
     try {
-        console.log("⏳ Loading FFmpeg...");
-        await ffmpeg.load();
-        console.log("✅ FFmpeg.js loaded successfully!");
-        return ffmpeg;
+        if (!window.ffmpeg || !window.ffmpeg.isLoaded()) {
+            console.error("❌ FFmpeg.js is not loaded!");
+            return;
+        }
+
+        const inputFileName = "input.txt";
+        window.ffmpeg.FS("writeFile", inputFileName, new TextEncoder().encode(text));
+
+        await window.ffmpeg.run(
+            "-f", "lavfi",
+            "-i", "color=c=black:s=1280x720:d=5",
+            "-vf", `drawtext=text='${text}':fontcolor=white:fontsize=24:x=100:y=100`,
+            "output.mp4"
+        );
+
+        const outputData = window.ffmpeg.FS("readFile", "output.mp4");
+        const videoBlob = new Blob([outputData.buffer], { type: "video/mp4" });
+        const videoUrl = URL.createObjectURL(videoBlob);
+
+        displayVideo(videoUrl);
     } catch (error) {
-        console.error("❌ Failed to load FFmpeg.js:", error);
-        return null;
+        console.error("❌ Error generating video:", error);
+        if (preloader) preloader.innerText = "❌ Video processing failed.";
     }
 }
 
-// Function to Generate Video with Scrolling Text
-async function generateVideo() {
-    const ffmpeg = await loadFFmpeg();
-    if (!ffmpeg) return; // Stop if FFmpeg failed to load
+function displayVideo(videoUrl) {
+    if (!videoUrl) return;
+    const preloader = document.getElementById("preloader");
+    if (preloader) preloader.style.display = 'none';
 
-    document.getElementById("response").innerText = "🎥 Generating video...";
+    const videoPreview = document.getElementById("videoPreview");
+    if (videoPreview) {
+        videoPreview.src = videoUrl;
+        videoPreview.style.display = 'block';
+    }
 
-    // Sample text overlay
-    const lectureText = "Welcome to AI Tutor! This is a sample scrolling text for your lecture.";
-
-    // Convert text to a file for FFmpeg processing
-    ffmpeg.FS("writeFile", "lecture.txt", new TextEncoder().encode(lectureText));
-
-    // Run FFmpeg to create a video with scrolling text
-    await ffmpeg.run(
-        "-f", "lavfi",
-        "-i", "color=c=black:s=640x360:d=10", // Black background for 10 seconds
-        "-vf", "drawtext=textfile=lecture.txt:fontcolor=white:fontsize=24:x=(w-text_w)/2:y=h-(t*20)", 
-        "-t", "10", "-r", "30", "-preset", "fast", "-y", "output.mp4"
-    );
-
-    // Read generated video and create a downloadable URL
-    const data = ffmpeg.FS("readFile", "output.mp4");
-    const videoBlob = new Blob([data.buffer], { type: "video/mp4" });
-    const videoUrl = URL.createObjectURL(videoBlob);
-
-    // Display video on the webpage
-    document.getElementById("response").innerHTML = `<video controls src="${videoUrl}" width="640"></video>`;
-    console.log("🎬 Video generated successfully!");
+    const downloadBtn = document.getElementById("downloadBtn");
+    if (downloadBtn) {
+        downloadBtn.href = videoUrl;
+        downloadBtn.style.display = 'block';
+    }
 }
-
-// Attach event listener to button
-document.getElementById("generateVideoBtn").addEventListener("click", generateVideo);
