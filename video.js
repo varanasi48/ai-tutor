@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const generateButton = document.getElementById("generateVideoButton");
 
     if (!generateButton) {
-        console.error("❌ Button with ID 'generateVideoButton' not found in the DOM.");
+        console.error("❌ Button with ID 'generateVideoButton' not found.");
         return;
     }
 
@@ -21,7 +21,7 @@ async function generateVideo() {
     }
 
     const text = responseElement.innerText || "Default AI Lecture Text";
-    const words = text.split(" "); 
+    const words = text.split(" ");
     const lines = [];
     let line = "";
 
@@ -42,9 +42,10 @@ async function generateVideo() {
     canvas.height = 1280;
     const lineHeight = 50;
 
-    let y = canvas.height; 
-    const speed = 6; // ✅ Increase speed to reduce delay
+    let y = canvas.height;
+    const speed = 6; // ✅ Adjust speed for smooth scrolling
 
+    // 🎥 Capture video from canvas
     const stream = canvas.captureStream(30);
     const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
     let chunks = [];
@@ -77,7 +78,6 @@ async function generateVideo() {
         ctx.font = "40px Arial";
         ctx.textAlign = "center";
 
-        // ✅ Draw all lines properly
         lines.forEach((line, i) => {
             ctx.fillText(line, canvas.width / 2, y + i * lineHeight);
         });
@@ -114,35 +114,6 @@ function displayVideo(videoUrl) {
     }
 
     downloadBtn.href = videoUrl;
+    downloadBtn.download = "lecture_video.webm"; // 🎥 Set downloadable filename
     downloadBtn.style.display = "block";
-}
-
-/* 🖼️ ✅ Display images in UI instead of links */
-function displayImages(imageUrls) {
-    const imageContainer = document.getElementById("imageContainer");
-    imageContainer.innerHTML = ""; // Clear previous content
-
-    imageUrls.forEach((url) => {
-        const img = document.createElement("img");
-        img.src = url;
-        img.alt = "Reference Image";
-        img.style.maxWidth = "300px";
-        img.style.display = "block";
-        img.style.margin = "10px auto";
-        imageContainer.appendChild(img);
-    });
-}
-
-/* 🎬 ✅ Embed reference videos */
-function displayVideos(videoUrls) {
-    const videoContainer = document.getElementById("videoContainer");
-    videoContainer.innerHTML = ""; 
-
-    videoUrls.forEach((url) => {
-        const videoElement = document.createElement("video");
-        videoElement.src = url;
-        videoElement.controls = true;
-        videoElement.style.width = "320px";
-        videoContainer.appendChild(videoElement);
-    });
 }
