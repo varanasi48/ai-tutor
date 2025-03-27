@@ -3,90 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor - Video Mode</title>
+    <title>AI Tutor</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Arial', sans-serif;
-            background: #000;
-            color: white;
-            text-align: center;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        input, button {
-            padding: 15px;
-            font-size: 18px;
-            margin: 10px;
-            border: none;
-            border-radius: 5px;
-        }
-        button {
-            background: #4CAF50;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #45a049;
-        }
-        #videoContainer {
-            width: 100vw;
-            height: 100vh;
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background: black;
-            align-items: center;
-            justify-content: center;
-        }
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
-        }
-        #downloadBtn {
-            display: none;
-            margin-top: 10px;
-            padding: 10px;
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f9; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
+        input, button { width: 80%; padding: 10px; margin: 10px 5px; font-size: 16px; border-radius: 5px; }
+        button { background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .loading { display: none; font-size: 16px; color: #007bff; }
+        video { width: 100%; margin-top: 10px; display: none; }
+        #downloadBtn { display: none; margin-top: 10px; padding: 10px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; }
     </style>
 </head>
 <body>
 
+    <h1>AI Tutor</h1>
     <div class="container">
         <input type="text" id="question" placeholder="Enter your question">
         <button onclick="fetchLecture()">Ask AI</button>
-        <button onclick="generateVideo()" style="display: none;" id="generateVideoButton">Generate Video</button>
-    </div>
+        <p class="loading" id="loadingText">⏳ AI is thinking...</p>
 
-    <div id="videoContainer">
+        <button id="generateVideoButton" onclick="generateVideo()" style="display: none;">Generate Video</button>
         <video id="videoPreview" controls></video>
         <a id="downloadBtn" href="" download="lecture.mp4">Download Video</a>
     </div>
 
-    <script src="video.js"></script>
     <script src="response.js"></script>
-
+    <script src="video.js"></script>
 </body>
 </html>
