@@ -7,11 +7,20 @@
 </head>
 <body>
     <h1>AI Tutor</h1>
-    <button id="generateVideoButton">Generate Lecture Video</button>
-    <video id="videoPreview" controls style="display: none;"></video>
+
+    <!-- Question Input -->
+    <label for="questionInput">Enter Your Question:</label>
+    <input type="text" id="questionInput" placeholder="Type your question here...">
+    <button id="askAIButton">Ask AI</button>
+
+    <!-- Lecture Response -->
+    <div id="responseContainer" style="margin-top: 20px;"></div>
+
+    <!-- Video Generation -->
+    <button id="generateVideoButton" style="display: none;">Generate Lecture Video</button>
+    <video id="videoPreview" controls style="display: none; width: 100%; max-width: 720px;"></video>
     <a id="downloadBtn" download="lecture-video.webm" style="display: none;">Download Video</a>
 
-    <!-- Ensure Scripts Load Properly -->
     <script src="response.js"></script>
     <script src="video.js"></script>
 </body>
