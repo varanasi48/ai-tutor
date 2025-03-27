@@ -7,35 +7,45 @@ async function generateVideo() {
         return;
     }
 
-    // Show loading message
-    const videoStatus = document.getElementById("videoStatus");
-    videoStatus.innerText = "⏳ Generating video, please wait...";
-    videoStatus.style.display = "block";
+    // Show full-screen video container
+    document.getElementById("videoContainer").style.display = "flex";
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    canvas.width = 720;
-    canvas.height = 1280;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    const words = text.split(" ");
-    let lines = [];
-    let currentLine = "";
-
-    words.forEach(word => {
-        let testLine = currentLine + word + " ";
-        let testWidth = ctx.measureText(testLine).width;
-        if (testWidth > 600) {  // Wrap text if it exceeds width
-            lines.push(currentLine);
-            currentLine = word + " ";
-        } else {
-            currentLine = testLine;
-        }
-    });
-    lines.push(currentLine);  // Add last line
-
-    let y = canvas.height;
+    // Set max width for text and scroll speed
+    const maxWidth = canvas.width * 0.8; // 80% of screen width
     const lineHeight = 50;
-    const scrollSpeed = 2; // Adjust scrolling speed
+    const scrollSpeed = 2;
+
+    ctx.font = "40px Arial";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+
+    function wrapText(text, maxWidth) {
+        const words = text.split(" ");
+        let lines = [];
+        let currentLine = "";
+
+        words.forEach(word => {
+            let testLine = currentLine + word + " ";
+            let testWidth = ctx.measureText(testLine).width;
+            if (testWidth > maxWidth) {
+                lines.push(currentLine);
+                currentLine = word + " ";
+            } else {
+                currentLine = testLine;
+            }
+        });
+
+        lines.push(currentLine);
+        return lines;
+    }
+
+    const lines = wrapText(text, maxWidth);
+    let y = canvas.height;
 
     const stream = canvas.captureStream(30);
     const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
@@ -54,13 +64,10 @@ async function generateVideo() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.fillStyle = "white";
-        ctx.font = "40px Arial";
-        ctx.textAlign = "center";
 
+        let textY = y;
         lines.forEach((line, index) => {
-            ctx.fillText(line, canvas.width / 2, y + index * lineHeight);
+            ctx.fillText(line, canvas.width / 2, textY + index * lineHeight);
         });
 
         y -= scrollSpeed;
@@ -74,7 +81,7 @@ async function generateVideo() {
     drawFrame();
 }
 
-// Function to show video
+// Function to display the generated video
 function displayVideo(videoUrl) {
     const videoPreview = document.getElementById("videoPreview");
     videoPreview.src = videoUrl;
@@ -83,8 +90,4 @@ function displayVideo(videoUrl) {
     const downloadBtn = document.getElementById("downloadBtn");
     downloadBtn.href = videoUrl;
     downloadBtn.style.display = "block";
-
-    // Hide loading message
-    const videoStatus = document.getElementById("videoStatus");
-    videoStatus.innerText = "✅ Video generated successfully!";
 }
