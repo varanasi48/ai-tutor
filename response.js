@@ -1,5 +1,3 @@
-let aiResponse = ""; // Store AI response globally
-
 async function fetchLecture() {
     const question = document.getElementById("question").value;
     if (!question) {
@@ -7,8 +5,8 @@ async function fetchLecture() {
         return;
     }
 
-    const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
-
+    const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com/...";
+    
     document.getElementById("response").innerText = "⏳ Processing...";
 
     try {
@@ -28,7 +26,8 @@ async function fetchLecture() {
             }
         } else if (response.status === 200) {
             const result = await response.json();
-            saveAndDisplayLecture(result);
+            console.log("✅ API Response:", result);  // ✅ Debugging
+            displayLecture(result);
         } else {
             document.getElementById("response").innerText = "❌ Error connecting to AI Tutor.";
         }
@@ -38,42 +37,29 @@ async function fetchLecture() {
     }
 }
 
-async function checkStatus(url) {
-    try {
-        const response = await fetch(url);
-        if (response.status === 200) {
-            const result = await response.json();
-            saveAndDisplayLecture(result);
-        } else {
-            setTimeout(() => checkStatus(url), 3000);
-        }
-    } catch (error) {
-        console.error("Polling error:", error);
-        setTimeout(() => checkStatus(url), 3000);
-    }
-}
-
-function saveAndDisplayLecture(result) {
+function displayLecture(result) {
     const responseContainer = document.getElementById("response");
-    responseContainer.innerHTML = "";  
+    responseContainer.innerHTML = "";
 
-    aiResponse = result?.answer || "No lecture content available.";  // Store globally
+    if (!result || !result.answer) {
+        responseContainer.innerHTML = "❌ No valid response received.";
+        return;
+    }
 
     const lectureText = document.createElement("p");
-    lectureText.textContent = aiResponse;
+    lectureText.textContent = result.answer;
     responseContainer.appendChild(lectureText);
 
-    if (result?.images?.length) {
+    if (result.images?.length) {
         result.images.forEach(imgUrl => {
             const img = document.createElement("img");
             img.src = imgUrl;
             img.alt = "Lecture Image";
-            img.className = "image-container";
             responseContainer.appendChild(img);
         });
     }
 
-    if (result?.videos?.length) {
+    if (result.videos?.length) {
         result.videos.forEach(videoUrl => {
             const video = document.createElement("video");
             video.setAttribute("controls", "");
