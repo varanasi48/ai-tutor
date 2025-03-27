@@ -1,10 +1,6 @@
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("generateVideoButton").addEventListener("click", generateLectureVideo);
-});
-
 async function generateLectureVideo() {
-    const text = document.getElementById("response")?.innerText || "Default AI Lecture Text";
-    const mediaData = JSON.parse(document.getElementById("mediaData")?.innerText || "{}");
+    const text = localStorage.getItem("lectureText") || "Default AI Lecture Text";
+    const mediaData = JSON.parse(localStorage.getItem("lectureMedia")) || {};
     const images = mediaData.images || [];
     const videos = mediaData.videos || [];
     
@@ -35,12 +31,12 @@ async function generateLectureVideo() {
         ctx.fillStyle = "white";
         ctx.font = "40px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(slides[slideIndex], canvas.width / 2, canvas.height / 2);
+        ctx.fillText(slides[slideIndex], canvas.width / 2, 100);
         
         if (images[slideIndex]) {
             const img = new Image();
             img.src = images[slideIndex];
-            img.onload = () => ctx.drawImage(img, 300, 100, 680, 400);
+            img.onload = () => ctx.drawImage(img, 300, 150, 680, 400);
         }
 
         if (videos[slideIndex]) {
@@ -49,14 +45,14 @@ async function generateLectureVideo() {
             video.autoplay = true;
             video.muted = true;
             video.loop = false;
-            video.onloadeddata = () => ctx.drawImage(video, 300, 100, 680, 400);
+            video.onloadeddata = () => ctx.drawImage(video, 300, 150, 680, 400);
         }
 
         slideIndex++;
         if (slideIndex < slides.length) {
-            setTimeout(drawSlide, 5000);
+            setTimeout(drawSlide, 7000);
         } else {
-            setTimeout(() => recorder.stop(), 5000);
+            setTimeout(() => recorder.stop(), 7000);
         }
     }
     
