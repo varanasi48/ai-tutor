@@ -13,31 +13,30 @@ async function fetchLecture() {
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch AI response: ${response.status} ${response.statusText}`);
+            throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
         }
 
-        const result = await response.json();
+        const text = await response.text();
+        console.log("Raw Response:", text); // Debugging
+
+        let result;
+        try {
+            result = JSON.parse(text);
+        } catch (error) {
+            throw new Error("Response is not valid JSON");
+        }
 
         if (!result || !result.text) {
-            throw new Error("Invalid response format from Logic App");
+            throw new Error("Invalid response format: Missing 'text' key");
         }
 
-        console.log("Lecture Response:", result); // Debugging
+        console.log("Parsed Response:", result); // Debugging
 
-        processLectureResponse(result.text, result.media || { images: [], videos: [] });
+        localStorage.setItem("lectureText", result.text);
+        localStorage.setItem("lectureMedia", JSON.stringify(result.media || { images: [], videos: [] }));
 
+        generateLectureVideo(); // Start generating video immediately
     } catch (error) {
         console.error("Error fetching lecture:", error);
     }
-}
-
-function processLectureResponse(text, mediaData) {
-    if (!text.trim()) {
-        console.error("Lecture text is empty!");
-        return;
-    }
-
-    localStorage.setItem("lectureText", text);
-    localStorage.setItem("lectureMedia", JSON.stringify(mediaData));
-    generateLectureVideo();
 }
