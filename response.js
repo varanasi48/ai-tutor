@@ -11,7 +11,7 @@ async function fetchAiResponse() {
     loadingIndicator.style.display = "block";
     responseContainer.innerHTML = ""; // Clear previous response
 
-    const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0"; // Replace with actual Logic App URL
+    const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0"; // Replace with your Logic App URL
 
     try {
         const response = await fetch(LOGIC_APP_URL, {
@@ -22,7 +22,7 @@ async function fetchAiResponse() {
 
         const result = await response.json();
 
-        console.log("🔍 Full API Response:", result); // ✅ Debugging step
+        console.log("🔍 Full API Response:", result); // ✅ Debugging: Log full response
 
         if (!result.answer) {
             console.error("❌ Invalid Response Format:", result);
