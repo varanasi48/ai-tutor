@@ -58,11 +58,6 @@ function displayLecture(result) {
         lectureVideo.src = result.videoUrl;
         lectureVideo.style.display = "block";
         lectureVideo.play(); // Auto-play lecture video
-
-        // ✅ Auto-scroll to video smoothly
-        setTimeout(() => {
-            lectureVideo.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 500);
     } else {
         document.getElementById("preloader").innerText = "❌ No lecture content available.";
     }
