@@ -1,102 +1,78 @@
 async function generateVideo() {
-    const result = JSON.parse(sessionStorage.getItem("lectureContent"));
-    if (!result) {
-        alert("No lecture content available.");
+    const lectureText = sessionStorage.getItem("lectureContent");
+    const images = JSON.parse(sessionStorage.getItem("images") || "[]");
+
+    if (!lectureText) {
+        alert("No lecture content found. Ask AI first!");
         return;
     }
 
-    document.getElementById("videoContainer").style.display = "flex";
+    console.log("📌 Loaded Lecture Content:", lectureText);
+    console.log("📌 Loaded Images:", images);
+
+    const videoPreview = document.getElementById("videoPreview");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    // Show processing message
+    document.getElementById("loadingText").innerText = "🎬 Generating video...";
+    document.getElementById("loadingText").style.display = "block";
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const textChunks = splitText(result.answer, 80); // Split text into slides
-    const images = result.images || [];
-    const videos = result.videos || [];
+    canvas.width = 1280;
+    canvas.height = 720;
 
     const stream = canvas.captureStream(30);
     const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
     let chunks = [];
 
-    recorder.ondataavailable = event => chunks.push(event.data);
-    recorder.onstop = () => {
+    recorder.ondataavailable = (event) => chunks.push(event.data);
+    recorder.onstop = async () => {
         const blob = new Blob(chunks, { type: "video/webm" });
         const videoURL = URL.createObjectURL(blob);
-        displayVideo(videoURL);
+
+        videoPreview.src = videoURL;
+        videoPreview.style.display = "block";
+        downloadBtn.href = videoURL;
+        downloadBtn.style.display = "block";
+
+        document.getElementById("loadingText").innerText = "✅ Video ready!";
     };
 
     recorder.start();
 
-    async function renderSlides() {
-        for (let i = 0; i < textChunks.length; i++) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "black";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "white";
-            ctx.font = "40px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(textChunks[i], canvas.width / 2, canvas.height / 2);
+    const slides = lectureText.split(". ").map((sentence, index) => ({
+        text: sentence.trim(),
+        image: images[index] || null,
+    }));
 
-            await delay(3000); // Pause for readability
+    let currentSlide = 0;
+    
+    function drawSlide() {
+        if (currentSlide >= slides.length) {
+            setTimeout(() => recorder.stop(), 2000);
+            return;
         }
 
-        for (let imgUrl of images) {
-            const img = await loadImage(imgUrl);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            await delay(5000);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        ctx.font = "36px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(slides[currentSlide].text, canvas.width / 2, canvas.height / 2);
+
+        if (slides[currentSlide].image) {
+            const img = new Image();
+            img.onload = () => {
+                ctx.drawImage(img, (canvas.width - 600) / 2, canvas.height / 4, 600, 300);
+            };
+            img.src = slides[currentSlide].image;
         }
 
-        for (let videoUrl of videos) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillText("Playing Video...", canvas.width / 2, canvas.height / 2);
-            await delay(3000);
-        }
-
-        recorder.stop();
+        currentSlide++;
+        setTimeout(drawSlide, 4000);
     }
 
-    renderSlides();
-}
-
-function displayVideo(videoUrl) {
-    const videoPreview = document.getElementById("videoPreview");
-    videoPreview.src = videoUrl;
-    videoPreview.style.display = "block";
-
-    const downloadBtn = document.getElementById("downloadBtn");
-    downloadBtn.href = videoUrl;
-    downloadBtn.style.display = "block";
-}
-
-// Utility Functions
-function splitText(text, maxChars) {
-    const words = text.split(" ");
-    let slides = [];
-    let currentSlide = "";
-
-    for (let word of words) {
-        if ((currentSlide + word).length > maxChars) {
-            slides.push(currentSlide);
-            currentSlide = word + " ";
-        } else {
-            currentSlide += word + " ";
-        }
-    }
-    slides.push(currentSlide);
-    return slides;
-}
-
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function loadImage(url) {
-    return new Promise(resolve => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.src = url;
-    });
+    drawSlide();
 }
