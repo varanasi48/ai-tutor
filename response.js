@@ -11,32 +11,23 @@ async function fetchLecture() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ question: "Generate lecture video" })
         });
-
+        
         if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+            throw new Error("Failed to fetch AI response");
         }
-
-        const text = await response.text();
-        console.log("Raw Response:", text); // Debugging
-
-        let result;
-        try {
-            result = JSON.parse(text);
-        } catch (error) {
-            throw new Error("Response is not valid JSON");
+        
+        const result = await response.json();
+        if (!result.answer) {
+            throw new Error("Invalid response format: Missing 'answer' key");
         }
-
-        if (!result || !result.text) {
-            throw new Error("Invalid response format: Missing 'text' key");
-        }
-
-        console.log("Parsed Response:", result); // Debugging
-
-        localStorage.setItem("lectureText", result.text);
-        localStorage.setItem("lectureMedia", JSON.stringify(result.media || { images: [], videos: [] }));
-
-        generateLectureVideo(); // Start generating video immediately
+        processLectureResponse(result.answer, result.media);
     } catch (error) {
         console.error("Error fetching lecture:", error);
     }
+}
+
+function processLectureResponse(text, mediaData) {
+    localStorage.setItem("lectureText", text);
+    localStorage.setItem("lectureMedia", JSON.stringify(mediaData));
+    generateLectureVideo();
 }
