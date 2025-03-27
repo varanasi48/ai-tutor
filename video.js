@@ -1,19 +1,14 @@
 async function generateLectureVideo() {
     const text = localStorage.getItem("lectureText") || "Default AI Lecture Text";
-    const mediaData = JSON.parse(localStorage.getItem("lectureMedia") || "{}");
+    const mediaData = JSON.parse(localStorage.getItem("lectureMedia")) || {};
     const images = mediaData.images || [];
     const videos = mediaData.videos || [];
-
-    if (!text.trim()) {
-        console.error("No lecture text found!");
-        return;
-    }
-
+    
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = 1280;
     canvas.height = 720;
-
+    
     let slideIndex = 0;
     const slides = text.split("\n\n");
     const stream = canvas.captureStream(30);
@@ -37,46 +32,43 @@ async function generateLectureVideo() {
         ctx.font = "40px Arial";
         ctx.textAlign = "center";
 
-        // Wrap text properly
-        const words = slides[slideIndex].split(" ");
+        // Handle Text Formatting
+        const lines = slides[slideIndex].split(" ");
+        let y = 100;
         let line = "";
-        let y = 200;
-        
-        for (let i = 0; i < words.length; i++) {
-            let testLine = line + words[i] + " ";
-            let metrics = ctx.measureText(testLine);
-            if (metrics.width > 1000) {
+        for (let word of lines) {
+            if (ctx.measureText(line + " " + word).width > 1000) {
                 ctx.fillText(line, canvas.width / 2, y);
-                line = words[i] + " ";
+                line = word;
                 y += 50;
             } else {
-                line = testLine;
+                line += " " + word;
             }
         }
         ctx.fillText(line, canvas.width / 2, y);
 
-        // Show image for slide if available
+        // Handle Images
         if (images[slideIndex]) {
             const img = new Image();
             img.src = images[slideIndex];
-            img.onload = () => ctx.drawImage(img, 300, 150, 680, 400);
+            img.onload = () => ctx.drawImage(img, 300, 200, 680, 400);
         }
 
-        // Show video if available
+        // Handle Videos
         if (videos[slideIndex]) {
             const video = document.createElement("video");
             video.src = videos[slideIndex];
             video.autoplay = true;
             video.muted = true;
             video.loop = false;
-            video.onloadeddata = () => ctx.drawImage(video, 300, 150, 680, 400);
+            video.onloadeddata = () => ctx.drawImage(video, 300, 200, 680, 400);
         }
 
         slideIndex++;
         if (slideIndex < slides.length) {
-            setTimeout(drawSlide, 7000);
+            setTimeout(drawSlide, 5000); // 5 seconds per slide
         } else {
-            setTimeout(() => recorder.stop(), 7000);
+            setTimeout(() => recorder.stop(), 5000);
         }
     }
     
