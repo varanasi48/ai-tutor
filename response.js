@@ -1,3 +1,5 @@
+let aiResponse = ""; // Store AI response globally
+
 async function fetchLecture() {
     const question = document.getElementById("question").value;
     if (!question) {
@@ -26,7 +28,7 @@ async function fetchLecture() {
             }
         } else if (response.status === 200) {
             const result = await response.json();
-            displayLecture(result);
+            saveAndDisplayLecture(result);
         } else {
             document.getElementById("response").innerText = "❌ Error connecting to AI Tutor.";
         }
@@ -41,7 +43,7 @@ async function checkStatus(url) {
         const response = await fetch(url);
         if (response.status === 200) {
             const result = await response.json();
-            displayLecture(result);
+            saveAndDisplayLecture(result);
         } else {
             setTimeout(() => checkStatus(url), 3000);
         }
@@ -51,12 +53,14 @@ async function checkStatus(url) {
     }
 }
 
-function displayLecture(result) {
+function saveAndDisplayLecture(result) {
     const responseContainer = document.getElementById("response");
     responseContainer.innerHTML = "";  
 
+    aiResponse = result?.answer || "No lecture content available.";  // Store globally
+
     const lectureText = document.createElement("p");
-    lectureText.textContent = result?.answer || "No lecture content available.";
+    lectureText.textContent = aiResponse;
     responseContainer.appendChild(lectureText);
 
     if (result?.images?.length) {
