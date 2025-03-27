@@ -1,17 +1,18 @@
-function generateVideo() {
-    if (!aiResponse) {
-        alert("No AI response available. Please ask a question first.");
+async function generateVideo() {
+    const responseText = document.getElementById("response").innerText.trim();
+    if (!responseText || responseText === "Waiting for response...") {
+        alert("No lecture available. Ask AI first!");
         return;
     }
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    canvas.width = 720;
-    canvas.height = 1280;
+    canvas.width = 1280;  
+    canvas.height = 720;  
 
-    let textLines = aiResponse.split(" "); // Break text into words
-    let y = canvas.height; // Start text from bottom
-    const speed = 2; // Scroll speed
+    const lines = splitTextIntoLines(responseText, 60); 
+    let y = canvas.height;  
+    let index = 0;
 
     const stream = canvas.captureStream(30);
     const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
@@ -30,31 +31,48 @@ function generateVideo() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
         ctx.fillStyle = "white";
-        ctx.font = "30px Arial";
+        ctx.font = "40px Arial";
         ctx.textAlign = "center";
 
-        let line = "";
-        let yOffset = 40; 
-
-        for (let i = 0; i < textLines.length; i++) {
-            line += textLines[i] + " ";
-            if (i % 10 === 0 || i === textLines.length - 1) { // Wrap text every 10 words
-                ctx.fillText(line.trim(), canvas.width / 2, y - yOffset);
-                yOffset += 40; 
-                line = "";
+        if (index < lines.length) {
+            ctx.fillText(lines[index], canvas.width / 2, y);
+            y -= 2;  
+            if (y < 300) {  
+                index++;
+                y = canvas.height; 
+                setTimeout(drawFrame, 1000);  
+            } else {
+                requestAnimationFrame(drawFrame);
             }
-        }
-
-        y -= speed;
-        if (y + 40 > 0) {
-            requestAnimationFrame(drawFrame);
         } else {
             recorder.stop();
         }
     }
 
     drawFrame();
+}
+
+function splitTextIntoLines(text, maxCharsPerLine) {
+    const words = text.split(" ");
+    let lines = [];
+    let currentLine = "";
+
+    words.forEach(word => {
+        if ((currentLine + word).length <= maxCharsPerLine) {
+            currentLine += word + " ";
+        } else {
+            lines.push(currentLine.trim());
+            currentLine = word + " ";
+        }
+    });
+
+    if (currentLine.trim()) {
+        lines.push(currentLine.trim());
+    }
+
+    return lines;
 }
 
 function displayVideo(videoUrl) {
