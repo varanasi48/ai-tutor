@@ -26,7 +26,7 @@ async function fetchLecture() {
         } else if (response.status === 200) {
             const result = await response.json();
             console.log("✅ Received Response:", result);
-            generateVideo(result);
+            startLiveLecture(result);
         } else {
             alert("❌ Error connecting to AI Tutor.");
         }
@@ -41,7 +41,7 @@ async function checkStatus(url) {
         const response = await fetch(url);
         if (response.status === 200) {
             const result = await response.json();
-            generateVideo(result);
+            startLiveLecture(result);
         } else {
             setTimeout(() => checkStatus(url), 3000);
         }
@@ -51,8 +51,8 @@ async function checkStatus(url) {
     }
 }
 
-function generateVideo(result) {
-    document.getElementById("loader").style.display = "block";
+function startLiveLecture(result) {
+    document.getElementById("loader").style.display = "none";
 
     const lectureText = result?.answer || "No lecture content available.";
     const images = result?.images || [];
@@ -62,28 +62,16 @@ function generateVideo(result) {
     console.log("📷 Images:", images);
     console.log("🎥 Videos:", videos);
 
-    const canvas = document.createElement("canvas");
+    const canvas = document.getElementById("lectureCanvas");
     const ctx = canvas.getContext("2d");
-    canvas.width = 1280;
-    canvas.height = 720;
 
-    const stream = canvas.captureStream(30);
-    const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-    let chunks = [];
-
-    recorder.ondataavailable = (event) => chunks.push(event.data);
-    recorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: "video/webm" });
-        const videoURL = URL.createObjectURL(blob);
-        displayVideo(videoURL);
-    };
-
-    recorder.start();
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     let y = canvas.height;
-    const speed = 2; 
     const words = lectureText.split(" ");
-    
+    const speed = 2; // Speed of scrolling text
+
     function drawFrame() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "black";
@@ -101,20 +89,49 @@ function generateVideo(result) {
         if (y > -canvas.height) {
             requestAnimationFrame(drawFrame);
         } else {
-            recorder.stop();
-            document.getElementById("loader").style.display = "none";
+            console.log("✅ Lecture Ended");
         }
     }
 
     drawFrame();
-}
 
-function displayVideo(videoUrl) {
-    const videoPreview = document.getElementById("videoPreview");
-    videoPreview.src = videoUrl;
-    videoPreview.style.display = "block";
+    // Display Images One by One (5-sec duration)
+    let imgIndex = 0;
+    function showNextImage() {
+        if (imgIndex < images.length) {
+            const img = new Image();
+            img.src = images[imgIndex];
+            img.onload = function () {
+                ctx.drawImage(img, (canvas.width - img.width) / 2, (canvas.height - img.height) / 2);
+            };
+            imgIndex++;
+            setTimeout(showNextImage, 5000);
+        }
+    }
 
-    const downloadBtn = document.getElementById("downloadBtn");
-    downloadBtn.href = videoUrl;
-    downloadBtn.style.display = "block";
+    showNextImage();
+
+    // Play Videos One by One
+    let videoIndex = 0;
+    function showNextVideo() {
+        if (videoIndex < videos.length) {
+            const video = document.createElement("video");
+            video.src = videos[videoIndex];
+            video.setAttribute("autoplay", true);
+            video.style.position = "absolute";
+            video.style.top = "50%";
+            video.style.left = "50%";
+            video.style.transform = "translate(-50%, -50%)";
+            video.style.width = "80%";
+            document.body.appendChild(video);
+
+            video.onended = () => {
+                document.body.removeChild(video);
+                videoIndex++;
+                showNextVideo();
+            };
+        }
+    }
+
+    showNextVideo();
 }
