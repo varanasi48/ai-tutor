@@ -26,6 +26,7 @@ async function fetchLecture() {
             }
         } else if (response.status === 200) {
             const result = await response.json();
+            console.log("✅ Received Response:", result);
             displayLecture(result);
         } else {
             document.getElementById("response").innerText = "❌ Error connecting to AI Tutor.";
@@ -55,29 +56,11 @@ function displayLecture(result) {
     const responseContainer = document.getElementById("response");
     responseContainer.innerHTML = "";  
 
-    const lectureText = document.createElement("p");
-    lectureText.textContent = result?.answer || "No lecture content available.";
-    responseContainer.appendChild(lectureText);
-
-    if (result?.images?.length) {
-        result.images.forEach(imgUrl => {
-            const img = document.createElement("img");
-            img.src = imgUrl;
-            img.alt = "Lecture Image";
-            img.className = "image-container";
-            responseContainer.appendChild(img);
-        });
+    if (!result?.answer) {
+        responseContainer.innerText = "❌ No lecture content available.";
+        return;
     }
 
-    if (result?.videos?.length) {
-        result.videos.forEach(videoUrl => {
-            const video = document.createElement("video");
-            video.setAttribute("controls", "");
-            const source = document.createElement("source");
-            source.src = videoUrl;
-            source.type = "video/mp4";
-            video.appendChild(source);
-            responseContainer.appendChild(video);
-        });
-    }
+    responseContainer.innerText = result.answer;
+    console.log("✅ Lecture Content:", result.answer);
 }
