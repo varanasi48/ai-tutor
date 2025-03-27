@@ -7,7 +7,8 @@ async function fetchLecture() {
 
     const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
 
-    document.getElementById("generateVideoButton").style.display = "none";
+    document.getElementById("loadingText").style.display = "block";  
+    document.getElementById("generateVideoButton").style.display = "none";  
 
     try {
         const response = await fetch(LOGIC_APP_URL, {
@@ -16,23 +17,20 @@ async function fetchLecture() {
             body: JSON.stringify({ question })
         });
 
-        if (response.ok) {
-            const result = await response.json();
-            processLecture(result);
+        const result = await response.json();
+        console.log("📌 API Response:", result);
+
+        if (result?.answer) {
+            sessionStorage.setItem("lectureContent", result.answer);
+            sessionStorage.setItem("images", JSON.stringify(result.images || []));
+            document.getElementById("generateVideoButton").style.display = "block"; 
         } else {
-            alert("Failed to fetch lecture.");
+            alert("❌ No lecture content available.");
         }
     } catch (error) {
         console.error("Fetch error:", error);
+        alert("❌ Request failed.");
+    } finally {
+        document.getElementById("loadingText").style.display = "none";  
     }
-}
-
-function processLecture(result) {
-    if (!result?.answer) {
-        alert("No lecture content available.");
-        return;
-    }
-
-    sessionStorage.setItem("lectureContent", JSON.stringify(result));
-    generateVideo(); // Auto-trigger video generation
 }
