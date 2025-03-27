@@ -13,23 +13,31 @@ async function fetchLecture() {
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch AI response. Status: ${response.status}`);
+            throw new Error(`Failed to fetch AI response: ${response.status} ${response.statusText}`);
         }
 
         const result = await response.json();
-        console.log("📌 Logic App Response:", result); // Debugging log
 
-        // Ensure mediaData exists
-        const mediaData = result.media ? result.media : { images: [], videos: [] };
+        if (!result || !result.text) {
+            throw new Error("Invalid response format from Logic App");
+        }
 
-        processLectureResponse(result.text, mediaData);
+        console.log("Lecture Response:", result); // Debugging
+
+        processLectureResponse(result.text, result.media || { images: [], videos: [] });
+
     } catch (error) {
-        console.error("🚨 Error fetching lecture:", error);
+        console.error("Error fetching lecture:", error);
     }
 }
 
 function processLectureResponse(text, mediaData) {
+    if (!text.trim()) {
+        console.error("Lecture text is empty!");
+        return;
+    }
+
     localStorage.setItem("lectureText", text);
-    localStorage.setItem("lectureMedia", JSON.stringify(mediaData || { images: [], videos: [] }));
+    localStorage.setItem("lectureMedia", JSON.stringify(mediaData));
     generateLectureVideo();
 }
