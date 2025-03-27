@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor</title>
+    <title>AI Tutor - Video Lecture</title>
     <style>
         body { font-family: 'Arial', sans-serif; text-align: center; padding: 20px; background: #f4f4f9; }
         h1 { color: #333; }
@@ -29,29 +29,22 @@
             cursor: pointer;
         }
         button:hover { background: #45a049; }
-        #response { margin-top: 20px; font-size: 18px; min-height: 50px; text-align: left; }
-        .image-container img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+        #loader { display: none; font-size: 18px; color: #ff5733; margin-top: 10px; }
         video { width: 100%; margin-top: 10px; border-radius: 8px; display: none; }
         #downloadBtn { display: none; margin-top: 10px; padding: 10px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; }
-        #loader { display: none; font-size: 18px; color: #ff5733; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <h1>AI Tutor</h1>
+    <h1>AI Tutor - Video Lecture</h1>
     <div class="container">
         <input type="text" id="question" placeholder="Enter your question">
         <button onclick="fetchLecture()">Ask AI</button>
-        <div id="response">Waiting for response...</div>
-
-        <button onclick="generateVideo()">Generate Video</button>
         <p id="loader">⏳ Generating video...</p>
         <video id="videoPreview" controls></video>
         <a id="downloadBtn" href="" download="lecture.mp4">Download Video</a>
     </div>
 
     <script src="response.js"></script>
-    <script src="video.js"></script>
-
 </body>
 </html>
