@@ -3,62 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor</title>
+    <title>AI Tutor - Live Lecture</title>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-            padding: 20px;
-            background: #f4f4f9;
-        }
-        h1 { color: #333; }
-        .container {
-            max-width: 600px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        input, button {
-            width: 80%;
-            padding: 10px;
-            margin: 10px 5px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        button {
-            background: #4CAF50;
-            color: white;
-            cursor: pointer;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; background: #000; color: white; margin: 0; }
+        .container { width: 80%; margin: auto; padding: 20px; text-align: center; }
+        input, button { width: 80%; padding: 10px; font-size: 16px; margin: 10px; }
+        button { background: #4CAF50; color: white; border: none; cursor: pointer; }
         button:hover { background: #45a049; }
-        #preloader {
-            display: none;
-            font-size: 18px;
-            font-weight: bold;
-            color: #007bff;
-            margin-top: 10px;
-        }
-        video { width: 100%; margin-top: 10px; border-radius: 8px; display: none; }
+        #loader { display: none; font-size: 20px; color: #ff5733; margin-top: 10px; }
+        #lecture { font-size: 24px; line-height: 1.5; white-space: normal; text-align: left; margin-top: 20px; }
+        #imageContainer img, video { max-width: 80%; margin-top: 20px; display: none; }
     </style>
 </head>
 <body>
 
-    <h1>AI Tutor</h1>
     <div class="container">
+        <h1>AI Tutor - Live Lecture</h1>
         <input type="text" id="question" placeholder="Enter your question">
         <button onclick="fetchLecture()">Ask AI</button>
-        
-        <div id="preloader">⏳ Generating Lecture...</div>
-        
-        <div id="lectureContainer">
-            <video id="lectureVideo" controls></video>
-        </div>
+        <p id="loader">⏳ Generating Lecture...</p>
+        <div id="lecture"></div>
+        <div id="imageContainer"></div>
     </div>
 
-    <script defer src="response.js"></script>
+    <script src="response.js"></script>
 
 </body>
 </html>
