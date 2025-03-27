@@ -7,13 +7,32 @@ async function generateVideo() {
         return;
     }
 
+    // Show loading message
+    const videoStatus = document.getElementById("videoStatus");
+    videoStatus.innerText = "⏳ Generating video, please wait...";
+    videoStatus.style.display = "block";
+
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = 720;
     canvas.height = 1280;
 
-    const lines = text.split(". ").map(line => line.trim()).filter(line => line.length > 0);
-    
+    const words = text.split(" ");
+    let lines = [];
+    let currentLine = "";
+
+    words.forEach(word => {
+        let testLine = currentLine + word + " ";
+        let testWidth = ctx.measureText(testLine).width;
+        if (testWidth > 600) {  // Wrap text if it exceeds width
+            lines.push(currentLine);
+            currentLine = word + " ";
+        } else {
+            currentLine = testLine;
+        }
+    });
+    lines.push(currentLine);  // Add last line
+
     let y = canvas.height;
     const lineHeight = 50;
     const scrollSpeed = 2; // Adjust scrolling speed
@@ -55,6 +74,7 @@ async function generateVideo() {
     drawFrame();
 }
 
+// Function to show video
 function displayVideo(videoUrl) {
     const videoPreview = document.getElementById("videoPreview");
     videoPreview.src = videoUrl;
@@ -63,4 +83,8 @@ function displayVideo(videoUrl) {
     const downloadBtn = document.getElementById("downloadBtn");
     downloadBtn.href = videoUrl;
     downloadBtn.style.display = "block";
+
+    // Hide loading message
+    const videoStatus = document.getElementById("videoStatus");
+    videoStatus.innerText = "✅ Video generated successfully!";
 }
