@@ -7,9 +7,7 @@ async function fetchLecture() {
 
     const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
 
-    document.getElementById("loader").style.display = "block";
-    document.getElementById("lecture").innerText = "";
-    document.getElementById("imageContainer").innerHTML = "";
+    document.getElementById("preloader").style.display = "block"; // Show loader
 
     try {
         const response = await fetch(LOGIC_APP_URL, {
@@ -19,30 +17,29 @@ async function fetchLecture() {
         });
 
         if (response.status === 202) {
-            const location = response.headers.get("Location");
-            if (location) {
-                checkStatus(location);
-            } else {
-                document.getElementById("loader").innerText = "❌ No response URL.";
-            }
+            checkStatus(response.headers.get("Location"));
         } else if (response.status === 200) {
             const result = await response.json();
-            startLiveLecture(result);
+            displayLecture(result);
         } else {
-            document.getElementById("loader").innerText = "❌ Error fetching response.";
+            document.getElementById("preloader").innerText = "❌ Error fetching lecture.";
         }
     } catch (error) {
         console.error("Fetch error:", error);
-        document.getElementById("loader").innerText = "❌ Request failed.";
+        document.getElementById("preloader").innerText = "❌ Request failed.";
     }
 }
 
 async function checkStatus(url) {
+    if (!url) {
+        document.getElementById("preloader").innerText = "❌ No result URL.";
+        return;
+    }
     try {
         const response = await fetch(url);
         if (response.status === 200) {
             const result = await response.json();
-            startLiveLecture(result);
+            displayLecture(result);
         } else {
             setTimeout(() => checkStatus(url), 3000);
         }
@@ -52,60 +49,16 @@ async function checkStatus(url) {
     }
 }
 
-function startLiveLecture(result) {
-    document.getElementById("loader").style.display = "none";
+function displayLecture(result) {
+    document.getElementById("preloader").style.display = "none"; // Hide loader
 
-    const lectureContainer = document.getElementById("lecture");
-    const imageContainer = document.getElementById("imageContainer");
+    const lectureVideo = document.getElementById("lectureVideo");
 
-    const lectureText = result?.answer || "No lecture content available.";
-    const images = result?.images || [];
-    const videos = result?.videos || [];
-
-    console.log("✅ Lecture Content:", lectureText);
-    console.log("📷 Images:", images);
-    console.log("🎥 Videos:", videos);
-
-    // Fix: Group words properly instead of one word per line
-    let words = lectureText.split(" ");
-    let index = 0;
-
-    function typeNextWord() {
-        if (index < words.length) {
-            lectureContainer.innerHTML += words[index] + " ";
-            index++;
-            setTimeout(typeNextWord, 100); // Adjust speed
-        } else {
-            showNextImage(0);
-        }
-    }
-    typeNextWord();
-
-    function showNextImage(imgIndex) {
-        if (imgIndex < images.length) {
-            const img = document.createElement("img");
-            img.src = images[imgIndex];
-            img.style.display = "block";
-            imageContainer.appendChild(img);
-
-            setTimeout(() => showNextImage(imgIndex + 1), 5000);
-        } else {
-            showNextVideo(0);
-        }
-    }
-
-    function showNextVideo(videoIndex) {
-        if (videoIndex < videos.length) {
-            const video = document.createElement("video");
-            video.src = videos[videoIndex];
-            video.controls = true;
-            video.autoplay = false; // Fix: Don't autoplay instantly
-            video.style.display = "block";
-            imageContainer.appendChild(video);
-
-            video.onended = () => {
-                showNextVideo(videoIndex + 1);
-            };
-        }
+    if (result?.videoUrl) {
+        lectureVideo.src = result.videoUrl;
+        lectureVideo.style.display = "block";
+        lectureVideo.play(); // Auto-play lecture video
+    } else {
+        document.getElementById("preloader").innerText = "❌ No lecture content available.";
     }
 }
