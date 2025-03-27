@@ -1,26 +1,20 @@
 async function generateVideo() {
-    const lectureText = sessionStorage.getItem("lectureContent");
-    const images = JSON.parse(sessionStorage.getItem("images") || "[]");
-
-    if (!lectureText) {
-        alert("No lecture content found. Ask AI first!");
+    const text = document.getElementById("response")?.innerText || "Default AI Lecture Text";
+    
+    if (text === "Waiting for response..." || text === "⏳ Processing...") {
+        alert("❌ No valid lecture to generate video!");
         return;
     }
 
-    console.log("📌 Loaded Lecture Content:", lectureText);
-    console.log("📌 Loaded Images:", images);
-
-    const videoPreview = document.getElementById("videoPreview");
-    const downloadBtn = document.getElementById("downloadBtn");
-
-    // Show processing message
-    document.getElementById("loadingText").innerText = "🎬 Generating video...";
-    document.getElementById("loadingText").style.display = "block";
+    document.getElementById("loader").style.display = "block";
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = 1280;
     canvas.height = 720;
+
+    let y = canvas.height; // Start text from bottom
+    const speed = 2; // Scroll speed
 
     const stream = canvas.captureStream(30);
     const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
@@ -30,49 +24,44 @@ async function generateVideo() {
     recorder.onstop = async () => {
         const blob = new Blob(chunks, { type: "video/webm" });
         const videoURL = URL.createObjectURL(blob);
-
-        videoPreview.src = videoURL;
-        videoPreview.style.display = "block";
-        downloadBtn.href = videoURL;
-        downloadBtn.style.display = "block";
-
-        document.getElementById("loadingText").innerText = "✅ Video ready!";
+        displayVideo(videoURL);
     };
 
     recorder.start();
 
-    const slides = lectureText.split(". ").map((sentence, index) => ({
-        text: sentence.trim(),
-        image: images[index] || null,
-    }));
-
-    let currentSlide = 0;
-    
-    function drawSlide() {
-        if (currentSlide >= slides.length) {
-            setTimeout(() => recorder.stop(), 2000);
-            return;
-        }
-
+    function drawFrame() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "white";
-        ctx.font = "36px Arial";
+        ctx.font = "40px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(slides[currentSlide].text, canvas.width / 2, canvas.height / 2);
 
-        if (slides[currentSlide].image) {
-            const img = new Image();
-            img.onload = () => {
-                ctx.drawImage(img, (canvas.width - 600) / 2, canvas.height / 4, 600, 300);
-            };
-            img.src = slides[currentSlide].image;
+        const words = text.split(" ");
+        let yOffset = y;
+
+        words.forEach((word, index) => {
+            ctx.fillText(word, canvas.width / 2, yOffset + index * 50);
+        });
+
+        y -= speed;
+        if (y > -canvas.height) {
+            requestAnimationFrame(drawFrame);
+        } else {
+            recorder.stop();
+            document.getElementById("loader").style.display = "none";
         }
-
-        currentSlide++;
-        setTimeout(drawSlide, 4000);
     }
 
-    drawSlide();
+    drawFrame();
+}
+
+function displayVideo(videoUrl) {
+    const videoPreview = document.getElementById("videoPreview");
+    videoPreview.src = videoUrl;
+    videoPreview.style.display = "block";
+
+    const downloadBtn = document.getElementById("downloadBtn");
+    downloadBtn.href = videoUrl;
+    downloadBtn.style.display = "block";
 }
