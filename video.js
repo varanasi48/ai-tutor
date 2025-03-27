@@ -1,6 +1,14 @@
 async function generateLectureVideo() {
     const text = localStorage.getItem("lectureText") || "Default AI Lecture Text";
-    const mediaData = JSON.parse(localStorage.getItem("lectureMedia")) || {};
+    let mediaData;
+    
+    try {
+        mediaData = JSON.parse(localStorage.getItem("lectureMedia")) || {};
+    } catch (error) {
+        console.error("Error parsing media data:", error);
+        mediaData = {};
+    }
+
     const images = mediaData.images || [];
     const videos = mediaData.videos || [];
     
@@ -31,8 +39,8 @@ async function generateLectureVideo() {
         ctx.fillStyle = "white";
         ctx.font = "40px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(slides[slideIndex], canvas.width / 2, 100);
-        
+        ctx.fillText(slides[slideIndex] || "Slide Content", canvas.width / 2, 100);
+
         if (images[slideIndex]) {
             const img = new Image();
             img.src = images[slideIndex];
