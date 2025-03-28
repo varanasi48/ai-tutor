@@ -66,7 +66,10 @@
         <input type="text" id="question" placeholder="Enter your question">
         <button onclick="fetchLecture()">Ask AI</button>
         <div id="preloader">⏳ Generating Lecture...</div>
-       <button onclick="toggleScroll()">Pause/Resume</button>
+      <div id="lectureContainer" style="position: absolute; width: 90%; left: 5%; top: 0; color: white;"></div>
+<button onclick="toggleScroll()">Pause/Resume</button>
+<button onclick="downloadLecture()">Download Lecture</button>
+
 
     </div>
 
