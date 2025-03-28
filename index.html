@@ -13,20 +13,37 @@
             overflow: hidden;
             background: black;
             display: flex;
-            align-items: center;
-            justify-content: center;
             flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
         }
         .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            position: absolute;
+            bottom: 10px;
         }
         input, button {
             padding: 10px;
             font-size: 16px;
-            margin-bottom: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+        input {
+            width: 30%;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
         }
         #preloader {
             display: none;
@@ -36,7 +53,7 @@
         }
         #canvasContainer {
             width: 100%;
-            height: 80vh;
+            height: 85vh;
             display: none;
             position: relative;
         }
@@ -45,36 +62,23 @@
             height: 100%;
             background: black;
         }
-        #pauseBtn {
-            margin-top: 10px;
-            padding: 10px;
-            font-size: 18px;
-            background: red;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #pauseBtn:hover {
-            background: darkred;
+        #slider {
+            width: 20%;
         }
     </style>
 </head>
 <body>
 
+    <div id="canvasContainer">
+        <canvas id="lectureCanvas"></canvas>
+    </div>
+
     <div class="container">
         <input type="text" id="question" placeholder="Enter your question">
         <button onclick="fetchLecture()">Ask AI</button>
-        <div id="preloader">⏳ Generating Lecture...</div>
-      <div id="lectureContainer" style="position: absolute; width: 90%; left: 5%; top: 0; color: white;"></div>
-<button onclick="toggleScroll()">Pause/Resume</button>
-<button onclick="downloadLecture()">Download Lecture</button>
-
-
-    </div>
-
-    <div id="canvasContainer">
-        <canvas id="lectureCanvas"></canvas>
+        <button onclick="toggleScroll()">Pause/Resume</button>
+        <input type="range" id="slider" min="0" max="100" value="0" oninput="scrollLecture(this.value)">
+        <button onclick="downloadLecture()">Download</button>
     </div>
 
     <script defer src="response.js"></script>
