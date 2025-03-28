@@ -51,17 +51,18 @@ async function checkStatus(url) {
 
 function displayLecture(result) {
     document.getElementById("preloader").style.display = "none"; // Hide loader
-
     const lectureVideo = document.getElementById("lectureVideo");
 
     if (result?.videoUrl) {
-        console.log("Video URL:", result.videoUrl); // Debugging
+        console.log("✅ Video URL:", result.videoUrl); // Debugging Log
         lectureVideo.src = result.videoUrl;
-        lectureVideo.style.display = "block"; // Ensure video is visible
-        lectureVideo.load(); // Ensure proper loading
-        lectureVideo.play(); // Auto-play
+        lectureVideo.style.display = "block";
+        lectureVideo.load();
+        lectureVideo.play();
     } else {
-        console.error("No video URL in response!");
+        console.error("⚠️ No video URL found in response!");
         document.getElementById("preloader").innerText = "❌ No lecture content available.";
+        console.log("🚨 Full Response Data:", result); // Check if response is missing video
     }
 }
+
