@@ -1,5 +1,6 @@
 let isPaused = false;
-let scrollSpeed = 2; // Adjust scrolling speed
+let scrollSpeed = 2;
+let animationFrame;
 
 async function fetchLecture() {
     const question = document.getElementById("question").value;
@@ -66,7 +67,7 @@ function structureAndAnimateText(text) {
 
     canvasContainer.style.display = "block";
 
-    // Set full screen canvas
+    // Set full-screen canvas
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
@@ -118,17 +119,22 @@ function structureAndAnimateText(text) {
         y -= scrollSpeed;
 
         if (y + formattedLines.length * 40 > 0) {
-            requestAnimationFrame(scrollText);
+            animationFrame = requestAnimationFrame(scrollText);
         }
     }
 
-    scrollText();
+    animationFrame = requestAnimationFrame(scrollText);
 }
 
-// Pause/Resume Function
-function togglePause() {
+// **Pause/Resume Function**
+function toggleScroll() {
     isPaused = !isPaused;
-    if (!isPaused) {
-        scrollText();
+    const btn = document.getElementById("pauseBtn");
+    if (isPaused) {
+        cancelAnimationFrame(animationFrame);
+        btn.innerText = "Resume";
+    } else {
+        btn.innerText = "Pause";
+        animationFrame = requestAnimationFrame(scrollText);
     }
 }
