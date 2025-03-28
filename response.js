@@ -3,7 +3,6 @@ let scrollSpeed = 2;
 let formattedLines = [];
 let y = 0;
 
-// Fetch Lecture and Save to File
 async function fetchLecture() {
     const question = document.getElementById("question").value;
     if (!question) {
@@ -13,7 +12,7 @@ async function fetchLecture() {
 
     const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
 
-    document.getElementById("preloader").style.display = "block"; // Show loader
+    document.getElementById("preloader").style.display = "block";
 
     try {
         const response = await fetch(LOGIC_APP_URL, {
@@ -37,7 +36,26 @@ async function fetchLecture() {
     }
 }
 
-// Save Lecture to File
+async function checkStatus(url) {
+    if (!url) {
+        document.getElementById("preloader").innerText = "❌ No result URL.";
+        return;
+    }
+    try {
+        const response = await fetch(url);
+        if (response.status === 200) {
+            const result = await response.json();
+            saveLectureToFile(result.answer);
+            displayLecture(result.answer);
+        } else {
+            setTimeout(() => checkStatus(url), 3000);
+        }
+    } catch (error) {
+        console.error("Polling error:", error);
+        setTimeout(() => checkStatus(url), 3000);
+    }
+}
+
 function saveLectureToFile(text) {
     const blob = new Blob([text], { type: "text/plain" });
     const link = document.createElement("a");
@@ -48,15 +66,12 @@ function saveLectureToFile(text) {
     document.body.removeChild(link);
 }
 
-// Display Lecture with Images/Videos
 function displayLecture(text) {
     document.getElementById("preloader").style.display = "none";
 
-    const canvasContainer = document.getElementById("canvasContainer");
     const canvas = document.getElementById("lectureCanvas");
     const ctx = canvas.getContext("2d");
 
-    canvasContainer.style.display = "block";
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
@@ -70,11 +85,9 @@ function displayLecture(text) {
     y = canvas.height;
 
     let elements = extractTextAndMedia(text);
-
     scrollText(elements);
 }
 
-// Extract text & media (images/videos)
 function extractTextAndMedia(text) {
     let elements = [];
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -102,7 +115,7 @@ function extractTextAndMedia(text) {
                 });
 
                 elements.push({ type: "text", content: line });
-                elements.push({ type: "text", content: "" }); // Add spacing
+                elements.push({ type: "text", content: "" });
             });
         }
     });
@@ -110,7 +123,6 @@ function extractTextAndMedia(text) {
     return elements;
 }
 
-// Scroll Function with Media
 function scrollText(elements) {
     if (isPaused) return;
 
@@ -137,7 +149,7 @@ function scrollText(elements) {
         } else if (element.type === "video") {
             let video = document.createElement("video");
             video.src = element.content;
-            video.controls = false;
+            video.controls = true;
             video.width = 300;
             video.height = 200;
             video.style.position = "absolute";
@@ -155,10 +167,9 @@ function scrollText(elements) {
     }
 }
 
-// Pause/Resume Button
 function toggleScroll() {
     isPaused = !isPaused;
     if (!isPaused) {
-        scrollText();
+        scrollText(formattedLines);
     }
 }
