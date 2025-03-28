@@ -54,25 +54,37 @@ async function checkStatus(url) {
 }
 
 function displayLecture(result) {
-    const responseContainer = document.getElementById("response");
-    responseContainer.innerHTML = "";  
-
-    const lectureText = document.createElement("p");
-    lectureText.textContent = result?.answer || "No lecture content available.";
-    responseContainer.appendChild(lectureText);
-
-    // Extract image URLs from the response
-    if (result?.answer.includes("![") && result?.answer.includes("](")) {
-        const imageUrl = result.answer.match(/\((.*?)\)/)[1]; // Extract URL inside ()
-        
-        if (imageUrl) {
-            const img = document.createElement("img");
-            img.src = imageUrl;
-            img.alt = "Lecture Image";
-            img.style.maxWidth = "100%";
-            responseContainer.appendChild(img);
-        }
+    const lectureCanvas = document.getElementById("lectureCanvas");
+    if (!lectureCanvas) {
+        console.error("❌ Error: 'lectureCanvas' not found.");
+        return;
     }
+
+    const ctx = lectureCanvas.getContext("2d");
+    ctx.clearRect(0, 0, lectureCanvas.width, lectureCanvas.height);
+
+    let lectureText = result?.answer || "No lecture content available.";
+    let words = lectureText.split(" ");
+    let line = "";
+    let y = 50; // Start position
+
+    ctx.font = "24px Arial";
+    ctx.fillStyle = "white";
+    
+    // Draw text in a scrolling effect
+    words.forEach((word, index) => {
+        line += word + " ";
+        if (index % 7 === 0) { // Break lines every 7 words
+            ctx.fillText(line, 20, y);
+            y += 30;
+            line = "";
+        }
+    });
+
+    // Draw the last line if any words remain
+    if (line) ctx.fillText(line, 20, y);
+}
+
 }
 
 
