@@ -53,17 +53,17 @@ function displayLecture(result) {
     document.getElementById("preloader").style.display = "none"; // Hide loader
 
     const text = result?.answer || "No lecture content available.";
-    startTypingEffect(text);
+    structureAndAnimateText(text);
 }
 
-function startTypingEffect(text) {
+function structureAndAnimateText(text) {
     const canvasContainer = document.getElementById("canvasContainer");
     const canvas = document.getElementById("lectureCanvas");
     const ctx = canvas.getContext("2d");
 
     canvasContainer.style.display = "block";
 
-    // Set canvas full screen
+    // Set full screen canvas
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
@@ -73,42 +73,40 @@ function startTypingEffect(text) {
     ctx.fillStyle = "white";
     ctx.textAlign = "left";
 
-    let words = text.split(" ");
-    let lines = [];
-    let line = "";
+    // **🚀 Structured Formatting:**
+    // 1️⃣ Break into sentences
+    let sentences = text.replace(/([.!?])\s*/g, "$1|").split("|"); 
 
-    // Breaking text into lines
-    for (let word of words) {
-        let testLine = line + word + " ";
-        let metrics = ctx.measureText(testLine);
-        if (metrics.width > canvas.width - 100) {
-            lines.push(line);
-            line = word + " ";
-        } else {
-            line = testLine;
-        }
-    }
-    lines.push(line);
+    let formattedLines = [];
+    let y = 100; // Start position for text
 
-    let y = 100;
-    let currentText = "";
-    let index = 0;
+    sentences.forEach(sentence => {
+        let words = sentence.trim().split(" ");
+        let line = "";
+
+        words.forEach(word => {
+            let testLine = line + word + " ";
+            let metrics = ctx.measureText(testLine);
+            if (metrics.width > canvas.width - 100) {
+                formattedLines.push(line);
+                line = word + " ";
+            } else {
+                line = testLine;
+            }
+        });
+
+        formattedLines.push(line);
+        formattedLines.push(""); // **Add spacing between sentences**
+    });
+
     let lineIndex = 0;
 
     function typeEffect() {
-        if (lineIndex < lines.length) {
-            if (index < lines[lineIndex].length) {
-                currentText += lines[lineIndex][index];
-                ctx.fillText(currentText, 50, y);
-                index++;
-                setTimeout(typeEffect, 50); // Adjust speed of typing
-            } else {
-                index = 0;
-                currentText = "";
-                y += 40; // Move to next line
-                lineIndex++;
-                setTimeout(typeEffect, 300); // Small delay before next line
-            }
+        if (lineIndex < formattedLines.length) {
+            ctx.fillText(formattedLines[lineIndex], 50, y);
+            y += 40; // Space between lines
+            lineIndex++;
+            setTimeout(typeEffect, 300); // **Adjust speed**
         }
     }
 
