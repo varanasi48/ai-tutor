@@ -1,7 +1,7 @@
 let isPaused = false;
 let scrollSpeed = 2;
 let formattedElements = [];
-let y = 0;
+let y = 0; // Start scrolling position
 
 async function fetchLecture() {
     const question = document.getElementById("question").value;
@@ -70,45 +70,27 @@ function displayLecture(result) {
     document.getElementById("preloader").style.display = "none";
 
     const text = result?.answer || "No lecture content available.";
-    structureAndAnimateContent(text);
-}
-
-function structureAndAnimateContent(text) {
-    const canvasContainer = document.getElementById("canvasContainer");
-    const canvas = document.getElementById("lectureCanvas");
-    const ctx = canvas.getContext("2d");
-
-    canvasContainer.style.display = "block";
-
-    // Full screen canvas
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = "30px Arial";
-    ctx.fillStyle = "white";
-    ctx.textAlign = "left";
-
-    formattedElements = [];
-    y = canvas.height; // Reset position
-
-    let elements = extractTextAndMedia(text);
-    formattedElements = elements;
-
-    scrollText();
+    formattedElements = extractTextAndMedia(text);
+    structureAndAnimateContent();
 }
 
 function extractTextAndMedia(text) {
     let elements = [];
     const urlRegex = /(https?:\/\/[^\s]+)/g;
+    
     let parts = text.split(urlRegex);
 
     parts.forEach(part => {
-        if (part.match(/\.(jpeg|jpg|png|gif|svg|png)$/i)) {
-            elements.push({ type: "image", content: part });
+        if (part.match(/\.(jpeg|jpg|png|gif|svg)$/i)) {
+            elements.push({ type: "image", content: part.trim() });
         } else if (part.match(/\.(mp4|webm|ogg)$/i)) {
-            elements.push({ type: "video", content: part });
+            elements.push({ type: "video", content: part.trim() });
+        } else if (part.includes("![") && part.includes("](")) { 
+            // Handles markdown-style images [Title](URL)
+            let matches = part.match(/\!\[(.*?)\]\((.*?)\)/);
+            if (matches) {
+                elements.push({ type: "image", content: matches[2].trim() });
+            }
         } else {
             let sentences = part.replace(/([.!?])\s*/g, "$1|").split("|");
             sentences.forEach(sentence => {
@@ -134,7 +116,30 @@ function extractTextAndMedia(text) {
     return elements;
 }
 
-function scrollText() {
+function structureAndAnimateContent() {
+    const canvasContainer = document.getElementById("canvasContainer");
+    const canvas = document.getElementById("lectureCanvas");
+    const ctx = canvas.getContext("2d");
+
+    canvasContainer.style.display = "block";
+
+    // Full screen canvas
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = "30px Arial";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "left";
+
+    y = canvas.height; // Reset position
+
+    scrollContent();
+}
+
+// **🚀 Scroll Function**
+function scrollContent() {
     if (isPaused) return;
 
     const canvas = document.getElementById("lectureCanvas");
@@ -174,13 +179,14 @@ function scrollText() {
     y -= scrollSpeed;
 
     if (y + yOffset > 0) {
-        requestAnimationFrame(scrollText);
+        requestAnimationFrame(scrollContent);
     }
 }
 
+// **🚀 Pause/Resume Button**
 function toggleScroll() {
     isPaused = !isPaused;
     if (!isPaused) {
-        scrollText();
+        scrollContent();
     }
 }
