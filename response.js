@@ -1,8 +1,5 @@
 let isPaused = false;
-let scrollSpeed = 2;
-let animationFrame;
-let formattedLines = [];
-let y = 0; // Store Y position for resume
+let scrollSpeed = 2; // Adjust scrolling speed
 
 async function fetchLecture() {
     const question = document.getElementById("question").value;
@@ -26,7 +23,7 @@ async function fetchLecture() {
             checkStatus(response.headers.get("Location"));
         } else if (response.status === 200) {
             const result = await response.json();
-            storeAndDisplayLecture(result);
+            displayLecture(result);
         } else {
             document.getElementById("preloader").innerText = "❌ Error fetching lecture.";
         }
@@ -45,7 +42,7 @@ async function checkStatus(url) {
         const response = await fetch(url);
         if (response.status === 200) {
             const result = await response.json();
-            storeAndDisplayLecture(result);
+            displayLecture(result);
         } else {
             setTimeout(() => checkStatus(url), 3000);
         }
@@ -55,24 +52,35 @@ async function checkStatus(url) {
     }
 }
 
-// **Store text and start animation**
-function storeAndDisplayLecture(result) {
+function displayLecture(result) {
     document.getElementById("preloader").style.display = "none"; // Hide loader
 
     const text = result?.answer || "No lecture content available.";
-    formattedLines = structureText(text);
-    y = window.innerHeight; // Reset scroll position
-    animateText();
+    structureAndAnimateText(text);
 }
 
-// **Breaks text into readable lines**
-function structureText(text) {
+function structureAndAnimateText(text) {
+    const canvasContainer = document.getElementById("canvasContainer");
     const canvas = document.getElementById("lectureCanvas");
     const ctx = canvas.getContext("2d");
+
+    canvasContainer.style.display = "block";
+
+    // Set full screen canvas
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.font = "30px Arial";
-    
+    ctx.fillStyle = "white";
+    ctx.textAlign = "left";
+
+    // **🚀 Structured Formatting:**
     let sentences = text.replace(/([.!?])\s*/g, "$1|").split("|");
-    let lines = [];
+
+    let formattedLines = [];
+    let y = canvas.height; // Start at bottom
 
     sentences.forEach(sentence => {
         let words = sentence.trim().split(" ");
@@ -82,54 +90,45 @@ function structureText(text) {
             let testLine = line + word + " ";
             let metrics = ctx.measureText(testLine);
             if (metrics.width > canvas.width - 100) {
-                lines.push(line);
+                formattedLines.push(line);
                 line = word + " ";
             } else {
                 line = testLine;
             }
         });
 
-        lines.push(line);
-        lines.push(""); // **Spacing between sentences**
+        formattedLines.push(line);
+        formattedLines.push(""); // **Add spacing between sentences**
     });
 
-    return lines;
-}
+    function scrollText() {
+        if (isPaused) return;
 
-// **Scrolling text animation**
-function animateText() {
-    if (isPaused) return;
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const canvas = document.getElementById("lectureCanvas");
-    const ctx = canvas.getContext("2d");
-    
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "white";
-    ctx.font = "30px Arial";
-    ctx.textAlign = "left";
+        ctx.fillStyle = "white";
+        ctx.font = "30px Arial";
+        ctx.textAlign = "left";
 
-    formattedLines.forEach((line, index) => {
-        ctx.fillText(line, 50, y + index * 40);
-    });
+        formattedLines.forEach((line, index) => {
+            ctx.fillText(line, 50, y + index * 40);
+        });
 
-    y -= scrollSpeed;
+        y -= scrollSpeed;
 
-    if (y + formattedLines.length * 40 > 0) {
-        animationFrame = requestAnimationFrame(animateText);
+        if (y + formattedLines.length * 40 > 0) {
+            requestAnimationFrame(scrollText);
+        }
     }
+
+    scrollText();
 }
 
-// **Pause & Resume Function**
-function toggleScroll() {
+// Pause/Resume Function
+function togglePause() {
     isPaused = !isPaused;
-    const btn = document.getElementById("pauseBtn");
-
-    if (isPaused) {
-        cancelAnimationFrame(animationFrame);
-        btn.innerText = "Resume";
-    } else {
-        btn.innerText = "Pause";
-        animationFrame = requestAnimationFrame(animateText);
+    if (!isPaused) {
+        scrollText();
     }
 }
