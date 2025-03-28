@@ -63,28 +63,49 @@ function startScrollingText(text) {
 
     canvasContainer.style.display = "block";
 
-    canvas.width = 600;
-    canvas.height = 300;
+    // Set canvas full screen
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = "24px Arial";
+    ctx.font = "30px Arial";
     ctx.fillStyle = "white";
     ctx.textAlign = "center";
 
-    let y = canvas.height;
+    // Break text into multiple lines
+    let words = text.split(" ");
+    let lines = [];
+    let line = "";
+
+    for (let word of words) {
+        let testLine = line + word + " ";
+        let metrics = ctx.measureText(testLine);
+        if (metrics.width > canvas.width - 100) {
+            lines.push(line);
+            line = word + " ";
+        } else {
+            line = testLine;
+        }
+    }
+    lines.push(line); // Push the last line
+
+    let y = canvas.height; // Start text at the bottom
 
     function animate() {
         ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
         ctx.fillStyle = "white";
-        ctx.font = "24px Arial";
-        ctx.fillText(text, canvas.width / 2, y);
+        ctx.font = "30px Arial";
 
-        y -= 1;
+        // Display each line with spacing
+        for (let i = 0; i < lines.length; i++) {
+            ctx.fillText(lines[i], canvas.width / 2, y + i * 40);
+        }
 
-        if (y > -50) {
+        y -= 1; // Move text up
+
+        if (y > -lines.length * 40) {
             requestAnimationFrame(animate);
         }
     }
