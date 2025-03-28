@@ -52,7 +52,6 @@ async function checkStatus(url) {
         setTimeout(() => checkStatus(url), 3000);
     }
 }
-
 function displayLecture(result) {
     const lectureCanvas = document.getElementById("lectureCanvas");
     if (!lectureCanvas) {
@@ -85,7 +84,6 @@ function displayLecture(result) {
     if (line) ctx.fillText(line, 20, y);
 }
 
-}
 
 
 function structureAndAnimateText(text) {
