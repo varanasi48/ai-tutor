@@ -1,3 +1,6 @@
+let isPaused = false;
+let scrollSpeed = 2; // Adjust scrolling speed
+
 async function fetchLecture() {
     const question = document.getElementById("question").value;
     if (!question) {
@@ -74,11 +77,10 @@ function structureAndAnimateText(text) {
     ctx.textAlign = "left";
 
     // **🚀 Structured Formatting:**
-    // 1️⃣ Break into sentences
-    let sentences = text.replace(/([.!?])\s*/g, "$1|").split("|"); 
+    let sentences = text.replace(/([.!?])\s*/g, "$1|").split("|");
 
     let formattedLines = [];
-    let y = 100; // Start position for text
+    let y = canvas.height; // Start at bottom
 
     sentences.forEach(sentence => {
         let words = sentence.trim().split(" ");
@@ -99,16 +101,34 @@ function structureAndAnimateText(text) {
         formattedLines.push(""); // **Add spacing between sentences**
     });
 
-    let lineIndex = 0;
+    function scrollText() {
+        if (isPaused) return;
 
-    function typeEffect() {
-        if (lineIndex < formattedLines.length) {
-            ctx.fillText(formattedLines[lineIndex], 50, y);
-            y += 40; // Space between lines
-            lineIndex++;
-            setTimeout(typeEffect, 300); // **Adjust speed**
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "white";
+        ctx.font = "30px Arial";
+        ctx.textAlign = "left";
+
+        formattedLines.forEach((line, index) => {
+            ctx.fillText(line, 50, y + index * 40);
+        });
+
+        y -= scrollSpeed;
+
+        if (y + formattedLines.length * 40 > 0) {
+            requestAnimationFrame(scrollText);
         }
     }
 
-    typeEffect();
+    scrollText();
+}
+
+// Pause/Resume Function
+function togglePause() {
+    isPaused = !isPaused;
+    if (!isPaused) {
+        scrollText();
+    }
 }
