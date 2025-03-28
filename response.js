@@ -54,11 +54,27 @@ async function checkStatus(url) {
 }
 
 function displayLecture(result) {
-    document.getElementById("preloader").style.display = "none"; // Hide loader
+    const responseContainer = document.getElementById("response");
+    responseContainer.innerHTML = "";  
 
-    const text = result?.answer || "No lecture content available.";
-    structureAndAnimateText(text);
+    const lectureText = document.createElement("p");
+    lectureText.textContent = result?.answer || "No lecture content available.";
+    responseContainer.appendChild(lectureText);
+
+    // Extract image URLs from the response
+    if (result?.answer.includes("![") && result?.answer.includes("](")) {
+        const imageUrl = result.answer.match(/\((.*?)\)/)[1]; // Extract URL inside ()
+        
+        if (imageUrl) {
+            const img = document.createElement("img");
+            img.src = imageUrl;
+            img.alt = "Lecture Image";
+            img.style.maxWidth = "100%";
+            responseContainer.appendChild(img);
+        }
+    }
 }
+
 
 function structureAndAnimateText(text) {
     const canvasContainer = document.getElementById("canvasContainer");
