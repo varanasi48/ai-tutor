@@ -36,7 +36,7 @@ async function checkStatus(url) {
         return;
     }
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, { cache: "no-store" }); // Prevent cache issues
         if (response.status === 200) {
             const result = await response.json();
             displayLecture(result);
@@ -55,10 +55,13 @@ function displayLecture(result) {
     const lectureVideo = document.getElementById("lectureVideo");
 
     if (result?.videoUrl) {
+        console.log("Video URL:", result.videoUrl); // Debugging
         lectureVideo.src = result.videoUrl;
-        lectureVideo.style.display = "block";
-        lectureVideo.play(); // Auto-play lecture video
+        lectureVideo.style.display = "block"; // Ensure video is visible
+        lectureVideo.load(); // Ensure proper loading
+        lectureVideo.play(); // Auto-play
     } else {
+        console.error("No video URL in response!");
         document.getElementById("preloader").innerText = "❌ No lecture content available.";
     }
 }
