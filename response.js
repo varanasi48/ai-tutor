@@ -8,7 +8,6 @@ async function fetchLecture() {
     const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
 
     document.getElementById("preloader").style.display = "block"; // Show loader
-    console.log("🔄 Sending request to API...");
 
     try {
         const response = await fetch(LOGIC_APP_URL, {
@@ -17,77 +16,78 @@ async function fetchLecture() {
             body: JSON.stringify({ question })
         });
 
-        console.log("✅ Response received:", response);
-        
         if (response.status === 202) {
-            const location = response.headers.get("Location");
-            console.log("🔄 Checking status at:", location);
-            checkStatus(location);
+            checkStatus(response.headers.get("Location"));
         } else if (response.status === 200) {
             const result = await response.json();
-            console.log("🎯 API returned result:", result);
             displayLecture(result);
         } else {
-            console.error("❌ API Error:", response.status);
             document.getElementById("preloader").innerText = "❌ Error fetching lecture.";
         }
     } catch (error) {
-        console.error("❌ Fetch error:", error);
+        console.error("Fetch error:", error);
         document.getElementById("preloader").innerText = "❌ Request failed.";
     }
 }
 
 async function checkStatus(url) {
     if (!url) {
-        console.error("❌ No polling URL provided.");
         document.getElementById("preloader").innerText = "❌ No result URL.";
         return;
     }
-    
     try {
         const response = await fetch(url);
-        console.log("🔄 Polling response:", response);
-
         if (response.status === 200) {
             const result = await response.json();
-            console.log("✅ Polling Success:", result);
             displayLecture(result);
         } else {
-            console.warn("⌛ Polling again in 3s...");
             setTimeout(() => checkStatus(url), 3000);
         }
     } catch (error) {
-        console.error("❌ Polling error:", error);
+        console.error("Polling error:", error);
         setTimeout(() => checkStatus(url), 3000);
     }
 }
 
 function displayLecture(result) {
     document.getElementById("preloader").style.display = "none"; // Hide loader
-    const lectureContainer = document.getElementById("lectureContainer");
-    lectureContainer.innerHTML = "";  // Clear previous content
 
-    console.log("📺 Displaying lecture:", result);
+    const text = result?.answer || "No lecture content available.";
+    startScrollingText(text);
+}
 
-    // Show video if available
-    if (result?.videoUrl) {
-        console.log("🎥 Video URL:", result.videoUrl);
+function startScrollingText(text) {
+    const canvasContainer = document.getElementById("canvasContainer");
+    const canvas = document.getElementById("lectureCanvas");
+    const ctx = canvas.getContext("2d");
 
-        const videoElement = document.createElement("video");
-        videoElement.setAttribute("id", "lectureVideo");
-        videoElement.setAttribute("controls", "");
-        videoElement.style.width = "100%";  
-        videoElement.style.display = "block"; 
+    canvasContainer.style.display = "block";
 
-        const source = document.createElement("source");
-        source.src = result.videoUrl;
-        source.type = "video/mp4";
+    canvas.width = 600;
+    canvas.height = 300;
 
-        videoElement.appendChild(source);
-        lectureContainer.appendChild(videoElement);
-        videoElement.play(); // Auto-play the video
-    } else {
-        console.warn("❌ No video URL found in response!");
-        lectureContainer.innerHTML = "<p>❌ No video content available.</p>";
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = "24px Arial";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+
+    let y = canvas.height;
+
+    function animate() {
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "white";
+        ctx.font = "24px Arial";
+        ctx.fillText(text, canvas.width / 2, y);
+
+        y -= 1;
+
+        if (y > -50) {
+            requestAnimationFrame(animate);
+        }
     }
+
+    animate();
 }
