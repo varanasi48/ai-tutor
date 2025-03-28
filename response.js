@@ -81,12 +81,12 @@ function extractTextAndMedia(text) {
     let parts = text.split(urlRegex);
 
     parts.forEach(part => {
+        part = part.trim();
         if (part.match(/\.(jpeg|jpg|png|gif|svg)$/i)) {
-            elements.push({ type: "image", content: part.trim() });
+            elements.push({ type: "image", content: part });
         } else if (part.match(/\.(mp4|webm|ogg)$/i)) {
-            elements.push({ type: "video", content: part.trim() });
+            elements.push({ type: "video", content: part });
         } else if (part.includes("![") && part.includes("](")) { 
-            // Handles markdown-style images [Title](URL)
             let matches = part.match(/\!\[(.*?)\]\((.*?)\)/);
             if (matches) {
                 elements.push({ type: "image", content: matches[2].trim() });
@@ -94,21 +94,7 @@ function extractTextAndMedia(text) {
         } else {
             let sentences = part.replace(/([.!?])\s*/g, "$1|").split("|");
             sentences.forEach(sentence => {
-                let words = sentence.trim().split(" ");
-                let line = "";
-
-                words.forEach(word => {
-                    let testLine = line + word + " ";
-                    if (testLine.length > 50) {
-                        elements.push({ type: "text", content: line });
-                        line = word + " ";
-                    } else {
-                        line = testLine;
-                    }
-                });
-
-                elements.push({ type: "text", content: line });
-                elements.push({ type: "text", content: "" });
+                elements.push({ type: "text", content: sentence.trim() });
             });
         }
     });
@@ -117,23 +103,35 @@ function extractTextAndMedia(text) {
 }
 
 function structureAndAnimateContent() {
-    const canvasContainer = document.getElementById("canvasContainer");
-    const canvas = document.getElementById("lectureCanvas");
-    const ctx = canvas.getContext("2d");
+    const contentContainer = document.getElementById("lectureContainer");
+    contentContainer.innerHTML = "";
+    y = 0; // Reset scroll position
 
-    canvasContainer.style.display = "block";
-
-    // Full screen canvas
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = "30px Arial";
-    ctx.fillStyle = "white";
-    ctx.textAlign = "left";
-
-    y = canvas.height; // Reset position
+    formattedElements.forEach(element => {
+        if (element.type === "text") {
+            let p = document.createElement("p");
+            p.innerText = element.content;
+            p.style.color = "white";
+            p.style.fontSize = "24px";
+            p.style.marginBottom = "15px";
+            contentContainer.appendChild(p);
+        } else if (element.type === "image") {
+            let img = document.createElement("img");
+            img.src = element.content;
+            img.style.maxWidth = "100%";
+            img.style.display = "block";
+            img.style.margin = "10px auto";
+            contentContainer.appendChild(img);
+        } else if (element.type === "video") {
+            let video = document.createElement("video");
+            video.src = element.content;
+            video.controls = true;
+            video.style.maxWidth = "100%";
+            video.style.display = "block";
+            video.style.margin = "10px auto";
+            contentContainer.appendChild(video);
+        }
+    });
 
     scrollContent();
 }
@@ -142,43 +140,13 @@ function structureAndAnimateContent() {
 function scrollContent() {
     if (isPaused) return;
 
-    const canvas = document.getElementById("lectureCanvas");
-    const ctx = canvas.getContext("2d");
+    const contentContainer = document.getElementById("lectureContainer");
 
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    contentContainer.style.transform = `translateY(${-y}px)`;
 
-    let yOffset = y;
+    y += scrollSpeed;
 
-    formattedElements.forEach(element => {
-        if (element.type === "text") {
-            ctx.fillStyle = "white";
-            ctx.fillText(element.content, 50, yOffset);
-            yOffset += 40;
-        } else if (element.type === "image") {
-            let img = new Image();
-            img.src = element.content;
-            img.onload = function () {
-                ctx.drawImage(img, 50, yOffset, 300, 200);
-            };
-            yOffset += 220;
-        } else if (element.type === "video") {
-            let video = document.createElement("video");
-            video.src = element.content;
-            video.controls = true;
-            video.width = 300;
-            video.height = 200;
-            video.style.position = "absolute";
-            video.style.top = `${yOffset}px`;
-            video.style.left = "50px";
-            document.body.appendChild(video);
-            yOffset += 220;
-        }
-    });
-
-    y -= scrollSpeed;
-
-    if (y + yOffset > 0) {
+    if (y < contentContainer.scrollHeight - window.innerHeight) {
         requestAnimationFrame(scrollContent);
     }
 }
