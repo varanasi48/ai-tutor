@@ -1,6 +1,8 @@
 let isPaused = false;
 let scrollSpeed = 2;
 let animationFrame;
+let formattedLines = [];
+let y = 0; // Store Y position for resume
 
 async function fetchLecture() {
     const question = document.getElementById("question").value;
@@ -24,7 +26,7 @@ async function fetchLecture() {
             checkStatus(response.headers.get("Location"));
         } else if (response.status === 200) {
             const result = await response.json();
-            displayLecture(result);
+            storeAndDisplayLecture(result);
         } else {
             document.getElementById("preloader").innerText = "❌ Error fetching lecture.";
         }
@@ -43,7 +45,7 @@ async function checkStatus(url) {
         const response = await fetch(url);
         if (response.status === 200) {
             const result = await response.json();
-            displayLecture(result);
+            storeAndDisplayLecture(result);
         } else {
             setTimeout(() => checkStatus(url), 3000);
         }
@@ -52,62 +54,25 @@ async function checkStatus(url) {
         setTimeout(() => checkStatus(url), 3000);
     }
 }
-function displayLecture(result) {
-    const lectureCanvas = document.getElementById("lectureCanvas");
-    if (!lectureCanvas) {
-        console.error("❌ Error: 'lectureCanvas' not found.");
-        return;
-    }
 
-    const ctx = lectureCanvas.getContext("2d");
-    ctx.clearRect(0, 0, lectureCanvas.width, lectureCanvas.height);
+// **Store text and start animation**
+function storeAndDisplayLecture(result) {
+    document.getElementById("preloader").style.display = "none"; // Hide loader
 
-    let lectureText = result?.answer || "No lecture content available.";
-    let words = lectureText.split(" ");
-    let line = "";
-    let y = 50; // Start position
-
-    ctx.font = "24px Arial";
-    ctx.fillStyle = "white";
-    
-    // Draw text in a scrolling effect
-    words.forEach((word, index) => {
-        line += word + " ";
-        if (index % 7 === 0) { // Break lines every 7 words
-            ctx.fillText(line, 20, y);
-            y += 30;
-            line = "";
-        }
-    });
-
-    // Draw the last line if any words remain
-    if (line) ctx.fillText(line, 20, y);
+    const text = result?.answer || "No lecture content available.";
+    formattedLines = structureText(text);
+    y = window.innerHeight; // Reset scroll position
+    animateText();
 }
 
-
-
-function structureAndAnimateText(text) {
-    const canvasContainer = document.getElementById("canvasContainer");
+// **Breaks text into readable lines**
+function structureText(text) {
     const canvas = document.getElementById("lectureCanvas");
     const ctx = canvas.getContext("2d");
-
-    canvasContainer.style.display = "block";
-
-    // Set full-screen canvas
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.font = "30px Arial";
-    ctx.fillStyle = "white";
-    ctx.textAlign = "left";
-
-    // **🚀 Structured Formatting:**
+    
     let sentences = text.replace(/([.!?])\s*/g, "$1|").split("|");
-
-    let formattedLines = [];
-    let y = canvas.height; // Start at bottom
+    let lines = [];
 
     sentences.forEach(sentence => {
         let words = sentence.trim().split(" ");
@@ -117,50 +82,54 @@ function structureAndAnimateText(text) {
             let testLine = line + word + " ";
             let metrics = ctx.measureText(testLine);
             if (metrics.width > canvas.width - 100) {
-                formattedLines.push(line);
+                lines.push(line);
                 line = word + " ";
             } else {
                 line = testLine;
             }
         });
 
-        formattedLines.push(line);
-        formattedLines.push(""); // **Add spacing between sentences**
+        lines.push(line);
+        lines.push(""); // **Spacing between sentences**
     });
 
-    function scrollText() {
-        if (isPaused) return;
-
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = "white";
-        ctx.font = "30px Arial";
-        ctx.textAlign = "left";
-
-        formattedLines.forEach((line, index) => {
-            ctx.fillText(line, 50, y + index * 40);
-        });
-
-        y -= scrollSpeed;
-
-        if (y + formattedLines.length * 40 > 0) {
-            animationFrame = requestAnimationFrame(scrollText);
-        }
-    }
-
-    animationFrame = requestAnimationFrame(scrollText);
+    return lines;
 }
 
-// **Pause/Resume Function**
+// **Scrolling text animation**
+function animateText() {
+    if (isPaused) return;
+
+    const canvas = document.getElementById("lectureCanvas");
+    const ctx = canvas.getContext("2d");
+    
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
+    ctx.font = "30px Arial";
+    ctx.textAlign = "left";
+
+    formattedLines.forEach((line, index) => {
+        ctx.fillText(line, 50, y + index * 40);
+    });
+
+    y -= scrollSpeed;
+
+    if (y + formattedLines.length * 40 > 0) {
+        animationFrame = requestAnimationFrame(animateText);
+    }
+}
+
+// **Pause & Resume Function**
 function toggleScroll() {
     isPaused = !isPaused;
     const btn = document.getElementById("pauseBtn");
+
     if (isPaused) {
         cancelAnimationFrame(animationFrame);
         btn.innerText = "Resume";
     } else {
         btn.innerText = "Pause";
-        animationFrame = requestAnimationFrame(scrollText);
+        animationFrame = requestAnimationFrame(animateText);
     }
 }
