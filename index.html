@@ -15,13 +15,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-direction: column;
         }
         .container {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
-            height: 100%;
         }
         input, button {
             padding: 10px;
@@ -36,16 +36,27 @@
         }
         #canvasContainer {
             width: 100%;
-            height: 100%;
+            height: 80vh;
             display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
+            position: relative;
         }
         canvas {
             width: 100%;
             height: 100%;
             background: black;
+        }
+        #pauseBtn {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 18px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #pauseBtn:hover {
+            background: darkred;
         }
     </style>
 </head>
@@ -55,6 +66,7 @@
         <input type="text" id="question" placeholder="Enter your question">
         <button onclick="fetchLecture()">Ask AI</button>
         <div id="preloader">⏳ Generating Lecture...</div>
+        <button id="pauseBtn" onclick="togglePause()">Pause</button>
     </div>
 
     <div id="canvasContainer">
