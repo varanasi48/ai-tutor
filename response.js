@@ -1,7 +1,7 @@
 let isPaused = false;
 let scrollSpeed = 2;
 let formattedLines = [];
-let y = 0;
+let y = 0; // Start scrolling position
 
 async function fetchLecture() {
     const question = document.getElementById("question").value;
@@ -12,7 +12,7 @@ async function fetchLecture() {
 
     const LOGIC_APP_URL = "https://prod-30.southindia.logic.azure.com:443/workflows/f6ad47edbaaf42b0a3b6e4816d8fbb73/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=c8sFzIKpt9E-VoiCZ46VuTosaiSZjQL0JkzmrxUWkV0";
 
-    document.getElementById("preloader").style.display = "block";
+    document.getElementById("preloader").style.display = "block"; // Show loader
 
     try {
         const response = await fetch(LOGIC_APP_URL, {
@@ -26,7 +26,7 @@ async function fetchLecture() {
         } else if (response.status === 200) {
             const result = await response.json();
             saveLectureToFile(result.answer);
-            displayLecture(result.answer);
+            displayLecture(result);
         } else {
             document.getElementById("preloader").innerText = "❌ Error fetching lecture.";
         }
@@ -46,7 +46,7 @@ async function checkStatus(url) {
         if (response.status === 200) {
             const result = await response.json();
             saveLectureToFile(result.answer);
-            displayLecture(result.answer);
+            displayLecture(result);
         } else {
             setTimeout(() => checkStatus(url), 3000);
         }
@@ -66,12 +66,21 @@ function saveLectureToFile(text) {
     document.body.removeChild(link);
 }
 
-function displayLecture(text) {
+function displayLecture(result) {
     document.getElementById("preloader").style.display = "none";
 
+    const text = result?.answer || "No lecture content available.";
+    structureAndAnimateText(text);
+}
+
+function structureAndAnimateText(text) {
+    const canvasContainer = document.getElementById("canvasContainer");
     const canvas = document.getElementById("lectureCanvas");
     const ctx = canvas.getContext("2d");
 
+    canvasContainer.style.display = "block";
+
+    // Full screen canvas
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
@@ -82,48 +91,34 @@ function displayLecture(text) {
     ctx.textAlign = "left";
 
     formattedLines = [];
-    y = canvas.height;
+    y = canvas.height; // Reset position
 
-    let elements = extractTextAndMedia(text);
-    scrollText(elements);
-}
+    let sentences = text.replace(/([.!?])\s*/g, "$1|").split("|");
 
-function extractTextAndMedia(text) {
-    let elements = [];
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    let parts = text.split(urlRegex);
+    sentences.forEach(sentence => {
+        let words = sentence.trim().split(" ");
+        let line = "";
 
-    parts.forEach(part => {
-        if (part.match(/\.(jpeg|jpg|png|gif|svg)$/)) {
-            elements.push({ type: "image", content: part });
-        } else if (part.match(/\.(mp4|webm|ogg)$/)) {
-            elements.push({ type: "video", content: part });
-        } else {
-            let sentences = part.replace(/([.!?])\s*/g, "$1|").split("|");
-            sentences.forEach(sentence => {
-                let words = sentence.trim().split(" ");
-                let line = "";
+        words.forEach(word => {
+            let testLine = line + word + " ";
+            let metrics = ctx.measureText(testLine);
+            if (metrics.width > canvas.width - 100) {
+                formattedLines.push(line);
+                line = word + " ";
+            } else {
+                line = testLine;
+            }
+        });
 
-                words.forEach(word => {
-                    let testLine = line + word + " ";
-                    if (testLine.length > 50) {
-                        elements.push({ type: "text", content: line });
-                        line = word + " ";
-                    } else {
-                        line = testLine;
-                    }
-                });
-
-                elements.push({ type: "text", content: line });
-                elements.push({ type: "text", content: "" });
-            });
-        }
+        formattedLines.push(line);
+        formattedLines.push(""); // Add spacing between sentences
     });
 
-    return elements;
+    scrollText();
 }
 
-function scrollText(elements) {
+// **🚀 Scroll Function**
+function scrollText() {
     if (isPaused) return;
 
     const canvas = document.getElementById("lectureCanvas");
@@ -132,44 +127,25 @@ function scrollText(elements) {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    let yOffset = y;
+    ctx.fillStyle = "white";
+    ctx.font = "30px Arial";
+    ctx.textAlign = "left";
 
-    elements.forEach(element => {
-        if (element.type === "text") {
-            ctx.fillStyle = "white";
-            ctx.fillText(element.content, 50, yOffset);
-            yOffset += 40;
-        } else if (element.type === "image") {
-            let img = new Image();
-            img.src = element.content;
-            img.onload = function () {
-                ctx.drawImage(img, 50, yOffset, 300, 200);
-            };
-            yOffset += 220;
-        } else if (element.type === "video") {
-            let video = document.createElement("video");
-            video.src = element.content;
-            video.controls = true;
-            video.width = 300;
-            video.height = 200;
-            video.style.position = "absolute";
-            video.style.top = `${yOffset}px`;
-            video.style.left = "50px";
-            document.body.appendChild(video);
-            yOffset += 220;
-        }
+    formattedLines.forEach((line, index) => {
+        ctx.fillText(line, 50, y + index * 40);
     });
 
     y -= scrollSpeed;
 
-    if (y + yOffset > 0) {
-        requestAnimationFrame(() => scrollText(elements));
+    if (y + formattedLines.length * 40 > 0) {
+        requestAnimationFrame(scrollText);
     }
 }
 
+// **🚀 Pause/Resume Button**
 function toggleScroll() {
     isPaused = !isPaused;
     if (!isPaused) {
-        scrollText(formattedLines);
+        scrollText();
     }
 }
