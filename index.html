@@ -5,65 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Tutor</title>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-            padding: 20px;
-            background: #f4f4f9;
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        h1 { color: #333; }
         .container {
-            max-width: 600px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
         }
         input, button {
-            width: 80%;
             padding: 10px;
-            margin: 10px 5px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
             font-size: 16px;
+            margin-bottom: 10px;
         }
-        button {
-            background: #4CAF50;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover { background: #45a049; }
         #preloader {
             display: none;
-            font-size: 18px;
+            font-size: 20px;
+            color: yellow;
             font-weight: bold;
-            color: #007bff;
-            margin-top: 10px;
         }
         #canvasContainer {
+            width: 100%;
+            height: 100%;
             display: none;
-            margin-top: 20px;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
         canvas {
-            background: black;
             width: 100%;
-            height: 300px;
+            height: 100%;
+            background: black;
         }
     </style>
 </head>
 <body>
 
-    <h1>AI Tutor</h1>
     <div class="container">
         <input type="text" id="question" placeholder="Enter your question">
         <button onclick="fetchLecture()">Ask AI</button>
-        
         <div id="preloader">⏳ Generating Lecture...</div>
-        
-        <div id="canvasContainer">
-            <canvas id="lectureCanvas"></canvas>
-        </div>
+    </div>
+
+    <div id="canvasContainer">
+        <canvas id="lectureCanvas"></canvas>
     </div>
 
     <script defer src="response.js"></script>
