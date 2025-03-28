@@ -53,10 +53,10 @@ function displayLecture(result) {
     document.getElementById("preloader").style.display = "none"; // Hide loader
 
     const text = result?.answer || "No lecture content available.";
-    startScrollingText(text);
+    startTypingEffect(text);
 }
 
-function startScrollingText(text) {
+function startTypingEffect(text) {
     const canvasContainer = document.getElementById("canvasContainer");
     const canvas = document.getElementById("lectureCanvas");
     const ctx = canvas.getContext("2d");
@@ -71,13 +71,13 @@ function startScrollingText(text) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.font = "30px Arial";
     ctx.fillStyle = "white";
-    ctx.textAlign = "center";
+    ctx.textAlign = "left";
 
-    // Break text into multiple lines
     let words = text.split(" ");
     let lines = [];
     let line = "";
 
+    // Breaking text into lines
     for (let word of words) {
         let testLine = line + word + " ";
         let metrics = ctx.measureText(testLine);
@@ -88,27 +88,29 @@ function startScrollingText(text) {
             line = testLine;
         }
     }
-    lines.push(line); // Push the last line
+    lines.push(line);
 
-    let y = canvas.height; // Start text at the bottom
+    let y = 100;
+    let currentText = "";
+    let index = 0;
+    let lineIndex = 0;
 
-    function animate() {
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "white";
-        ctx.font = "30px Arial";
-
-        // Display each line with spacing
-        for (let i = 0; i < lines.length; i++) {
-            ctx.fillText(lines[i], canvas.width / 2, y + i * 40);
-        }
-
-        y -= 1; // Move text up
-
-        if (y > -lines.length * 40) {
-            requestAnimationFrame(animate);
+    function typeEffect() {
+        if (lineIndex < lines.length) {
+            if (index < lines[lineIndex].length) {
+                currentText += lines[lineIndex][index];
+                ctx.fillText(currentText, 50, y);
+                index++;
+                setTimeout(typeEffect, 50); // Adjust speed of typing
+            } else {
+                index = 0;
+                currentText = "";
+                y += 40; // Move to next line
+                lineIndex++;
+                setTimeout(typeEffect, 300); // Small delay before next line
+            }
         }
     }
 
-    animate();
+    typeEffect();
 }
