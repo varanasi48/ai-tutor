@@ -1,7 +1,7 @@
 let isPaused = false;
 let scrollSpeed = 2;
-let formattedLines = [];
-let y = 0; // Start scrolling position
+let formattedElements = [];
+let y = 0;
 
 async function fetchLecture() {
     const question = document.getElementById("question").value;
@@ -70,10 +70,10 @@ function displayLecture(result) {
     document.getElementById("preloader").style.display = "none";
 
     const text = result?.answer || "No lecture content available.";
-    structureAndAnimateText(text);
+    structureAndAnimateContent(text);
 }
 
-function structureAndAnimateText(text) {
+function structureAndAnimateContent(text) {
     const canvasContainer = document.getElementById("canvasContainer");
     const canvas = document.getElementById("lectureCanvas");
     const ctx = canvas.getContext("2d");
@@ -90,34 +90,50 @@ function structureAndAnimateText(text) {
     ctx.fillStyle = "white";
     ctx.textAlign = "left";
 
-    formattedLines = [];
+    formattedElements = [];
     y = canvas.height; // Reset position
 
-    let sentences = text.replace(/([.!?])\s*/g, "$1|").split("|");
-
-    sentences.forEach(sentence => {
-        let words = sentence.trim().split(" ");
-        let line = "";
-
-        words.forEach(word => {
-            let testLine = line + word + " ";
-            let metrics = ctx.measureText(testLine);
-            if (metrics.width > canvas.width - 100) {
-                formattedLines.push(line);
-                line = word + " ";
-            } else {
-                line = testLine;
-            }
-        });
-
-        formattedLines.push(line);
-        formattedLines.push(""); // Add spacing between sentences
-    });
+    let elements = extractTextAndMedia(text);
+    formattedElements = elements;
 
     scrollText();
 }
 
-// **🚀 Scroll Function**
+function extractTextAndMedia(text) {
+    let elements = [];
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    let parts = text.split(urlRegex);
+
+    parts.forEach(part => {
+        if (part.match(/\.(jpeg|jpg|png|gif|svg|png)$/i)) {
+            elements.push({ type: "image", content: part });
+        } else if (part.match(/\.(mp4|webm|ogg)$/i)) {
+            elements.push({ type: "video", content: part });
+        } else {
+            let sentences = part.replace(/([.!?])\s*/g, "$1|").split("|");
+            sentences.forEach(sentence => {
+                let words = sentence.trim().split(" ");
+                let line = "";
+
+                words.forEach(word => {
+                    let testLine = line + word + " ";
+                    if (testLine.length > 50) {
+                        elements.push({ type: "text", content: line });
+                        line = word + " ";
+                    } else {
+                        line = testLine;
+                    }
+                });
+
+                elements.push({ type: "text", content: line });
+                elements.push({ type: "text", content: "" });
+            });
+        }
+    });
+
+    return elements;
+}
+
 function scrollText() {
     if (isPaused) return;
 
@@ -127,22 +143,41 @@ function scrollText() {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = "white";
-    ctx.font = "30px Arial";
-    ctx.textAlign = "left";
+    let yOffset = y;
 
-    formattedLines.forEach((line, index) => {
-        ctx.fillText(line, 50, y + index * 40);
+    formattedElements.forEach(element => {
+        if (element.type === "text") {
+            ctx.fillStyle = "white";
+            ctx.fillText(element.content, 50, yOffset);
+            yOffset += 40;
+        } else if (element.type === "image") {
+            let img = new Image();
+            img.src = element.content;
+            img.onload = function () {
+                ctx.drawImage(img, 50, yOffset, 300, 200);
+            };
+            yOffset += 220;
+        } else if (element.type === "video") {
+            let video = document.createElement("video");
+            video.src = element.content;
+            video.controls = true;
+            video.width = 300;
+            video.height = 200;
+            video.style.position = "absolute";
+            video.style.top = `${yOffset}px`;
+            video.style.left = "50px";
+            document.body.appendChild(video);
+            yOffset += 220;
+        }
     });
 
     y -= scrollSpeed;
 
-    if (y + formattedLines.length * 40 > 0) {
+    if (y + yOffset > 0) {
         requestAnimationFrame(scrollText);
     }
 }
 
-// **🚀 Pause/Resume Button**
 function toggleScroll() {
     isPaused = !isPaused;
     if (!isPaused) {
