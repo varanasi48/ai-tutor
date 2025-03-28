@@ -1,7 +1,7 @@
 let isPaused = false;
 let scrollSpeed = 2;
+let y = 0; // Start position
 let formattedElements = [];
-let y = 0; // Start scrolling position
 
 async function fetchLecture() {
     const question = document.getElementById("question").value;
@@ -25,7 +25,7 @@ async function fetchLecture() {
             checkStatus(response.headers.get("Location"));
         } else if (response.status === 200) {
             const result = await response.json();
-            saveLectureToFile(result.answer);
+            storeLecture(result.answer);
             displayLecture(result);
         } else {
             document.getElementById("preloader").innerText = "❌ Error fetching lecture.";
@@ -45,7 +45,7 @@ async function checkStatus(url) {
         const response = await fetch(url);
         if (response.status === 200) {
             const result = await response.json();
-            saveLectureToFile(result.answer);
+            storeLecture(result.answer);
             displayLecture(result);
         } else {
             setTimeout(() => checkStatus(url), 3000);
@@ -56,7 +56,14 @@ async function checkStatus(url) {
     }
 }
 
-function saveLectureToFile(text) {
+// ✅ Store lecture text for scrolling instead of downloading immediately
+function storeLecture(text) {
+    localStorage.setItem("lectureText", text);
+}
+
+// ✅ Download manually when needed
+function downloadLecture() {
+    const text = localStorage.getItem("lectureText") || "No lecture available.";
     const blob = new Blob([text], { type: "text/plain" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -77,7 +84,7 @@ function displayLecture(result) {
 function extractTextAndMedia(text) {
     let elements = [];
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    
+
     let parts = text.split(urlRegex);
 
     parts.forEach(part => {
@@ -102,6 +109,7 @@ function extractTextAndMedia(text) {
     return elements;
 }
 
+// ✅ Scrolling text & media together
 function structureAndAnimateContent() {
     const contentContainer = document.getElementById("lectureContainer");
     contentContainer.innerHTML = "";
@@ -136,12 +144,11 @@ function structureAndAnimateContent() {
     scrollContent();
 }
 
-// **🚀 Scroll Function**
+// ✅ Scroll function (keeps text, images, and videos in place)
 function scrollContent() {
     if (isPaused) return;
 
     const contentContainer = document.getElementById("lectureContainer");
-
     contentContainer.style.transform = `translateY(${-y}px)`;
 
     y += scrollSpeed;
@@ -151,7 +158,7 @@ function scrollContent() {
     }
 }
 
-// **🚀 Pause/Resume Button**
+// ✅ Pause/Resume Button
 function toggleScroll() {
     isPaused = !isPaused;
     if (!isPaused) {
